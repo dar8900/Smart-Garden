@@ -7,6 +7,8 @@
 #define IN_NIGHT_ADDR				1
 #define TO_DAY_ADDR					2
 #define TO_NIGHT_ADDR				3
+#define DIMMING_ADDR				4
+#define SECOND_COUNTER_ADDR			5 // 4byte
 
 
 

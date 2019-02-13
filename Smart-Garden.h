@@ -24,6 +24,6 @@ typedef enum
 }PINS;
 
 extern GENERAL_FLAG SystemFlag;
-
+extern int16_t Dimming;
 
 #endif

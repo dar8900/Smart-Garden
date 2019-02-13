@@ -8,9 +8,18 @@
 
 #define LOG_PERIOD(Minute)  	    (Minute * SECOND_IN_MINUTE)
 
+typedef enum
+{
+	DAY_HOURS = 12,
+	NIGHT_HOURS = 8,
+	TRANSITION_HOURS = 2
+}HOURS;
+
 extern uint32_t SecondCounter;
 extern uint16_t SecondForDimming;
 
 void CheckTime(void);
 void LogFlag(void);
+void LogDimming(void);
+void LogSecondCounter(void);
 #endif

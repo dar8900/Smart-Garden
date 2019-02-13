@@ -3,12 +3,13 @@
 #include "IgroSensor.h"
 
 GENERAL_FLAG SystemFlag;
+int16_t Dimming = 0;
 
 void TaskDimmingLed( void *pvParameters );
 void TaskTime( void *pvParameters );
 void TaskIgroSensorPump( void *pvParameters );
 
-static void EepromInit()
+static void InitSystem()
 {
 
 	if(EEPROM.read(IN_DAY_ADDR) > 1)
@@ -17,7 +18,11 @@ static void EepromInit()
 		SystemFlag.InNight = false;
 		SystemFlag.ToDay = false;
 		SystemFlag.ToNight = false;
+		Dimming = 255;
+		SecondCounter = SECONDS_HOUR(DAY_HOURS);
 		LogFlag();
+		LogDimming();
+		LogSecondCounter();
 	}
 	else
 	{
@@ -25,6 +30,8 @@ static void EepromInit()
 		SystemFlag.InNight = EEPROM.read(IN_NIGHT_ADDR);
 		SystemFlag.ToDay = EEPROM.read(TO_DAY_ADDR);
 		SystemFlag.ToNight = EEPROM.read(TO_NIGHT_ADDR);
+		Dimming = EEPROM.read(DIMMING_ADDR);
+		EEPROM.get(SECOND_COUNTER_ADDR, SecondCounter);
 	}
 }
 
@@ -33,7 +40,7 @@ void setup()
 	Serial.begin(9600);
 	pinMode(DIMMING_LED, OUTPUT);
 	pinMode(PUMP, OUTPUT);
-	EepromInit();
+	InitSystem();
 	
 	xTaskCreate(
 	TaskDimmingLed
@@ -70,7 +77,6 @@ void loop()
 void TaskDimmingLed(void *pvParameters)  // This is a task.
 {
 	(void) pvParameters;
-	int16_t Dimming = 0;
 	for (;;)
 	{
 		if(SystemFlag.InDay)
