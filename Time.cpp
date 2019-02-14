@@ -8,22 +8,22 @@
 uint32_t SecondCounter;
 static uint32_t CounterToLog;
 uint32_t ActualMillis, PreviousMillis, Delay = 1000;
-uint16_t SecondForDimming = (SECONDS_MINUTE(TRANSITION_HOURS) / 255);
+uint16_t SecondForDimming = (SECONDS_MINUTE(TRANSITION_HOURS_DFL) / 255);
 DAY_TIME_HOURS DayTimeHours;
 
 void LogDayTime()
 {
-	EEPROM.update(DAY_TIME_ADDR, SystemFlag.DayTime);
+	FlagForSave.SaveDayTime = true;
 }
 
 void LogDimming()
 {
-	EEPROM.update(DIMMING_ADDR ,(uint8_t)Dimming);
+	FlagForSave.SaveDimming = true;
 }
 
 void LogSecondCounter()
 {
-	EEPROM.put(SECOND_COUNTER_ADDR, SecondCounter);
+	FlagForSave.SaveSecondCouter = true;
 }
 
 void CheckTime()

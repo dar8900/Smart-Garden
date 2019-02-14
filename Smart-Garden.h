@@ -28,5 +28,6 @@ typedef enum
 
 extern GENERAL_FLAG SystemFlag;
 extern int16_t Dimming;
+extern FLAG_EEPROM FlagForSave;
 
 #endif

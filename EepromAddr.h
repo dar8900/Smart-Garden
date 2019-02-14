@@ -12,6 +12,12 @@
 #define DIMMING_ADDR				4
 #define SECOND_COUNTER_ADDR			5 // 4byte
 
-
+typedef struct
+{
+	bool SaveDayTime;
+	bool SaveHours;
+	bool SaveDimming;
+	bool SaveSecondCouter;
+}FLAG_EEPROM;
 
 #endif

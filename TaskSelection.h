@@ -11,4 +11,6 @@
 
 #define TASK_KEYBOARD
 
+#define TASK_EEPROM
+
 #endif

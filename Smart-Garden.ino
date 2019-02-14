@@ -5,7 +5,10 @@
 #include "Keyboard.h"
 #include "LCDLib.h"
 
+#define REGULAR_SCREEN_REFRESH_DELAY 	40
+
 GENERAL_FLAG SystemFlag;
+FLAG_EEPROM FlagForSave;
 int16_t Dimming = 0;
 
 void TaskDimmingLed( void *pvParameters );
@@ -13,6 +16,7 @@ void TaskTime( void *pvParameters );
 void TaskIgroSensorPump( void *pvParameters );
 void TaskLCD(void *pvParameters);
 void TaskKeyboard(void *pvParameters);
+void TaskEeprom(void *pvParameters);
 
 static void InitSystem()
 {
@@ -28,9 +32,7 @@ static void InitSystem()
 		DayTimeHours.DayHours = DAY_HOURS_DFL;
 		DayTimeHours.NightHours = NIGHT_HOURS_DFL;
 		DayTimeHours.TransitionHours = TRANSITION_HOURS_DFL;
-		EEPROM.update(DAY_HOUR_ADDR, DayTimeHours.DayHours);
-		EEPROM.update(NIGHT_HOUR_ADDR, DayTimeHours.NightHours);
-		EEPROM.update(TRANSITION_HOUR_ADDR, DayTimeHours.TransitionHours);
+		FlagForSave.SaveHours = true;
 	}
 	else
 	{
@@ -99,6 +101,16 @@ void setup()
 	,  64  // Stack size
 	,  NULL
 	,  3  // Priority
+	,  NULL );
+#endif
+
+#ifdef TASK_EEPROM	
+		xTaskCreate(
+	TaskEeprom
+	,  (const portCHAR *) "Eeprom"
+	,  64  // Stack size
+	,  NULL
+	,  0 // Priority
 	,  NULL );
 #endif
 }
@@ -221,12 +233,12 @@ void TaskLCD(void *pvParameters)  // This is a task.
 	{
 		if(RegularScreen)
 		{
-			if(RegularScreenCnt < 10)
+			if(RegularScreenCnt < REGULAR_SCREEN_REFRESH_DELAY)
 			{
 				LCDPrintString(ONE, LEFT_ALIGN, String(TimePeriod[SystemFlag.DayTime]));
 				LCDPrintString(TWO, LEFT_ALIGN, String(PumpState[SystemFlag.ManualPumpState]));
 			}
-			if(RegularScreenCnt >= 10)
+			if(RegularScreenCnt >= (REGULAR_SCREEN_REFRESH_DELAY + 10))
 			{
 				if((SystemFlag.DayTime + 1) < MAX_DAY_TIME - 1)
 					LCDPrintString(ONE, CENTER_ALIGN, "Ore per:" + String(TimePeriod[SystemFlag.DayTime + 1]));
@@ -266,9 +278,9 @@ void TaskLCD(void *pvParameters)  // This is a task.
 					break;
 			}
 			RegularScreenCnt++;
-			if(RegularScreenCnt == 10)
+			if(RegularScreenCnt == REGULAR_SCREEN_REFRESH_DELAY)
 				ClearLCD();
-			if(RegularScreenCnt == 20)
+			if(RegularScreenCnt == (REGULAR_SCREEN_REFRESH_DELAY + 10))
 			{
 				RegularScreenCnt = 0;
 				ClearLCD();
@@ -356,9 +368,7 @@ void TaskLCD(void *pvParameters)  // This is a task.
 						Hours = 0;
 						SetHour = false;
 						RegularScreen = true;
-						EEPROM.update(DAY_HOUR_ADDR, DayTimeHours.DayHours);
-						EEPROM.update(NIGHT_HOUR_ADDR, DayTimeHours.NightHours);
-						EEPROM.update(TRANSITION_HOUR_ADDR, DayTimeHours.TransitionHours);
+						FlagForSave.SaveHours = true;
 						ClearLCD();
 					}
 					break;
@@ -380,6 +390,40 @@ void TaskKeyboard(void *pvParameters)  // This is a task.
 	{
 		CheckButtons();
 		OsDelay(25);
+	}
+}
+#endif
+
+#ifdef TASK_EEPROM
+void TaskEeprom(void *pvParameters)  // This is a task.
+{
+	(void) pvParameters;
+
+	for (;;)
+	{
+		if(FlagForSave.SaveDayTime)
+		{
+			FlagForSave.SaveDayTime = false;
+			EEPROM.update(DAY_TIME_ADDR, SystemFlag.DayTime);
+		}
+		if(FlagForSave.SaveHours)
+		{
+			FlagForSave.SaveHours = false;
+			EEPROM.update(DAY_HOUR_ADDR, DayTimeHours.DayHours);
+			EEPROM.update(NIGHT_HOUR_ADDR, DayTimeHours.NightHours);
+			EEPROM.update(TRANSITION_HOUR_ADDR, DayTimeHours.TransitionHours);
+		}
+		if(FlagForSave.SaveDimming)
+		{
+			FlagForSave.SaveDimming = false;
+			EEPROM.update(DIMMING_ADDR ,(uint8_t)Dimming);
+		}
+		if(FlagForSave.SaveSecondCouter)
+		{
+			FlagForSave.SaveSecondCouter = false;
+			EEPROM.put(SECOND_COUNTER_ADDR, SecondCounter);
+		}
+		OsDelay(1000);
 	}
 }
 #endif
