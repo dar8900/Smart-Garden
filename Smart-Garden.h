@@ -9,18 +9,21 @@
 
 typedef struct 
 {
-	bool InDay;
-	bool ToNight;
-	bool ToDay;
-	bool InNight;
-	bool TurnOnPump;
+	uint8_t DayTime;
+	bool TurnOnPumpAuto;
+	uint8_t ManualPumpState;
 	bool RefreshDimming;
+	bool SettingHours;
+	bool BypassIgrosensor;
 }GENERAL_FLAG;
 
 typedef enum
 {
 	DIMMING_LED = 3,
-	PUMP = 5	
+	PUMP        = 5,	
+	UP_BUTTON   = 6,
+	DOWN_BUTTON = 7,
+	OK_BUTTON   = 8
 }PINS;
 
 extern GENERAL_FLAG SystemFlag;

@@ -7,5 +7,8 @@
 
 #define TASK_IGROSENSORPUMP
 
+#define TASK_LCD
+
+#define TASK_KEYBOARD
 
 #endif

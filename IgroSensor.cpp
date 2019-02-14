@@ -36,8 +36,22 @@ void SensorsResponse()
 		}
 		TotalMean /= MAX_SENSORS;
 		if(TotalMean >= PUMP_ACTIVATION_THR)
-			SystemFlag.TurnOnPump = true;
+			SystemFlag.TurnOnPumpAuto = true;
 		else 
-			SystemFlag.TurnOnPump = false;
+			SystemFlag.TurnOnPumpAuto = false;
+	}
+}
+
+void PumpAction(bool IsOn)
+{
+	if(IsOn)
+	{
+		digitalWrite(PUMP, HIGH);
+		SystemFlag.ManualPumpState = PUMP_ON;
+	}
+	else
+	{
+		digitalWrite(PUMP, LOW);
+		SystemFlag.ManualPumpState = PUMP_OFF;
 	}
 }

@@ -9,13 +9,11 @@ uint32_t SecondCounter;
 static uint32_t CounterToLog;
 uint32_t ActualMillis, PreviousMillis, Delay = 1000;
 uint16_t SecondForDimming = (SECONDS_MINUTE(TRANSITION_HOURS) / 255);
+DAY_TIME_HOURS DayTimeHours;
 
-void LogFlag()
+void LogDayTime()
 {
-	EEPROM.update(IN_DAY_ADDR,   (uint8_t)SystemFlag.InDay);
-	EEPROM.update(IN_NIGHT_ADDR, (uint8_t)SystemFlag.InNight);
-	EEPROM.update(TO_DAY_ADDR,   (uint8_t)SystemFlag.ToDay);
-	EEPROM.update(TO_NIGHT_ADDR, (uint8_t)SystemFlag.ToNight);
+	EEPROM.update(DAY_TIME_ADDR, SystemFlag.DayTime);
 }
 
 void LogDimming()
@@ -37,48 +35,45 @@ void CheckTime()
 		SecondCounter++;
 		CounterToLog++;
 	}
-	if(SystemFlag.InDay)
+	switch(SystemFlag.DayTime)
 	{
-		if(SecondCounter >= SECONDS_MINUTE(DAY_HOURS))
-		{
-			SecondCounter = 0;
-			SystemFlag.InDay = false;
-			SystemFlag.ToNight = true;
-		}
+		case IN_DAY:
+			if(SecondCounter >= SECONDS_MINUTE(DayTimeHours.DayHours))
+			{
+				SecondCounter = 0;
+				SystemFlag.DayTime = TO_NIGHT;
+			}
+			break;
+		case IN_NIGHT:
+			if(SecondCounter >= SECONDS_MINUTE(DayTimeHours.NightHours))
+			{
+				SecondCounter = 0;
+				SystemFlag.DayTime = TO_DAY;
+			}	
+			break;
+		case TO_NIGHT:
+			if(SecondCounter >= SECONDS_MINUTE(DayTimeHours.TransitionHours))
+			{
+				SecondCounter = 0;
+				SystemFlag.DayTime = IN_NIGHT;
+				SystemFlag.RefreshDimming = true;
+			}	
+			break;
+		case TO_DAY:
+			if(SecondCounter >= SECONDS_MINUTE(DayTimeHours.TransitionHours))
+			{
+				SecondCounter = 0;
+				SystemFlag.DayTime = IN_DAY;
+				SystemFlag.RefreshDimming = true;
+			}	
+			break;
+		default:
+			break;		
 	}
-	if(SystemFlag.ToNight)
-	{
-		if(SecondCounter >= SECONDS_MINUTE(TRANSITION_HOURS))
-		{
-			SecondCounter = 0;
-			SystemFlag.ToNight = false;
-			SystemFlag.InNight = true;
-			SystemFlag.RefreshDimming = true;
-		}		
-	}
-	if(SystemFlag.InNight)
-	{
-		if(SecondCounter >= SECONDS_MINUTE(NIGHT_HOURS))
-		{
-			SecondCounter = 0;
-			SystemFlag.InNight = false;
-			SystemFlag.ToDay = true;
-		}		
-	}
-	if(SystemFlag.ToDay)
-	{
-		if(SecondCounter >= SECONDS_MINUTE(TRANSITION_HOURS))
-		{
-			SecondCounter = 0;
-			SystemFlag.ToDay = false;
-			SystemFlag.InDay = true;
-			SystemFlag.RefreshDimming = true;
-		}		
-	}	
 	if(CounterToLog == LOG_PERIOD(MINUTE_TO_LOG))
 	{
 		CounterToLog = 0;
-		LogFlag();
+		LogDayTime();
 		LogDimming();
 		LogSecondCounter();
 	}

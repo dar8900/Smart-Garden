@@ -9,6 +9,14 @@ typedef enum
 	MAX_SENSORS
 }IGRO_SENSORS;
 
+typedef enum
+{
+	PUMP_OFF = 0,
+	PUMP_ON,
+	MAX_PUMP_STATE
+}PUMP_STATE;
+
 void SensorsResponse(void);
+void PumpAction(bool IsOn);
 
 #endif

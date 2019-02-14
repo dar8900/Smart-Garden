@@ -2,6 +2,8 @@
 #include "Time.h"
 #include "IgroSensor.h"
 #include "TaskSelection.h"
+#include "Keyboard.h"
+#include "LCDLib.h"
 
 GENERAL_FLAG SystemFlag;
 int16_t Dimming = 0;
@@ -9,30 +11,34 @@ int16_t Dimming = 0;
 void TaskDimmingLed( void *pvParameters );
 void TaskTime( void *pvParameters );
 void TaskIgroSensorPump( void *pvParameters );
+void TaskLCD(void *pvParameters);
+void TaskKeyboard(void *pvParameters);
 
 static void InitSystem()
 {
-
-	if(EEPROM.read(IN_DAY_ADDR) > 1)
+	SystemFlag.DayTime = EEPROM.read(DAY_TIME_ADDR);
+	if(SystemFlag.DayTime > MAX_DAY_TIME)
 	{
-		SystemFlag.InDay = true;
-		SystemFlag.InNight = false;
-		SystemFlag.ToDay = false;
-		SystemFlag.ToNight = false;
+		SystemFlag.DayTime = IN_DAY;
 		Dimming = 255;
-		SecondCounter = SECONDS_MINUTE(DAY_HOURS);
-		LogFlag();
+		SecondCounter = 0;
+		LogDayTime();
 		LogDimming();
 		LogSecondCounter();
+		DayTimeHours.DayHours = DAY_HOURS;
+		DayTimeHours.NightHours = NIGHT_HOURS;
+		DayTimeHours.TransitionHours = TRANSITION_HOURS;
+		EEPROM.update(DAY_HOUR_ADDR, DayTimeHours.DayHours);
+		EEPROM.update(NIGHT_HOUR_ADDR, DayTimeHours.NightHours);
+		EEPROM.update(TRANSITION_HOUR_ADDR, DayTimeHours.TransitionHours);
 	}
 	else
 	{
-		SystemFlag.InDay = EEPROM.read(IN_DAY_ADDR);
-		SystemFlag.InNight = EEPROM.read(IN_NIGHT_ADDR);
-		SystemFlag.ToDay = EEPROM.read(TO_DAY_ADDR);
-		SystemFlag.ToNight = EEPROM.read(TO_NIGHT_ADDR);
 		Dimming = EEPROM.read(DIMMING_ADDR);
 		EEPROM.get(SECOND_COUNTER_ADDR, SecondCounter);
+		DayTimeHours.DayHours = EEPROM.read(DAY_HOUR_ADDR);
+		DayTimeHours.NightHours = EEPROM.read(NIGHT_HOUR_ADDR);
+		DayTimeHours.TransitionHours = EEPROM.read(TRANSITION_HOUR_ADDR);
 	}
 }
 
@@ -41,8 +47,11 @@ void setup()
 	Serial.begin(9600);
 	pinMode(DIMMING_LED, OUTPUT);
 	pinMode(PUMP, OUTPUT);
+	pinMode(UP_BUTTON, INPUT);
+	pinMode(DOWN_BUTTON, INPUT);
+	pinMode(OK_BUTTON, INPUT);
 	InitSystem();
-
+	LCDInit();
 #ifdef TASK_DIMMING
 	xTaskCreate(
 	TaskDimmingLed
@@ -72,7 +81,26 @@ void setup()
 	,  2  // Priority
 	,  NULL );
 #endif
-	
+
+#ifdef TASK_LCD	
+		xTaskCreate(
+	TaskLCD
+	,  (const portCHAR *) "LCD"
+	,  128 // Stack size
+	,  NULL
+	,  1  // Priority
+	,  NULL );
+#endif
+
+#ifdef TASK_KEYBOARD	
+		xTaskCreate(
+	TaskKeyboard
+	,  (const portCHAR *) "Keyboard"
+	,  64  // Stack size
+	,  NULL
+	,  3  // Priority
+	,  NULL );
+#endif
 }
 
 void loop() 
@@ -86,41 +114,42 @@ void TaskDimmingLed(void *pvParameters)  // This is a task.
 	(void) pvParameters;
 	for (;;)
 	{
-		if(SystemFlag.InDay)
+		switch(SystemFlag.DayTime)
 		{
-			if(SystemFlag.RefreshDimming)
-			{
-				Dimming = 255;
-				analogWrite(DIMMING_LED, Dimming);
-				SystemFlag.RefreshDimming = false;
-			}
-		}
-		if(SystemFlag.InNight)
-		{
-			if(SystemFlag.RefreshDimming)
-			{
-				Dimming = 0;
-				analogWrite(DIMMING_LED, Dimming);
-				SystemFlag.RefreshDimming = false;
-			}
-		}
-		if(SystemFlag.ToDay)
-		{
-			if(SecondCounter % SecondForDimming)
-			{
-				analogWrite(DIMMING_LED, Dimming++);
-				if(Dimming > 255)
+			case IN_DAY:
+				if(SystemFlag.RefreshDimming)
+				{
 					Dimming = 255;
-			}
-		}
-		if(SystemFlag.ToNight)
-		{
-			if(SecondCounter % SecondForDimming)
-			{
-				analogWrite(DIMMING_LED, Dimming--);
-				if(Dimming < 0)
+					analogWrite(DIMMING_LED, Dimming);
+					SystemFlag.RefreshDimming = false;
+				}
+				break;
+			case IN_NIGHT:
+				if(SystemFlag.RefreshDimming)
+				{
 					Dimming = 0;
-			}			
+					analogWrite(DIMMING_LED, Dimming);
+					SystemFlag.RefreshDimming = false;
+				}
+				break;
+			case TO_NIGHT:
+				if(SecondCounter % SecondForDimming)
+				{
+					analogWrite(DIMMING_LED, Dimming--);
+					if(Dimming < 0)
+						Dimming = 0;
+				}	
+				break;
+			case TO_DAY:
+				if(SecondCounter % SecondForDimming)
+				{
+					analogWrite(DIMMING_LED, Dimming++);
+					if(Dimming > 255)
+						Dimming = 255;
+				}
+				break;
+			default:
+				break;			
 		}
 		OsDelay(500);
 	}
@@ -147,13 +176,204 @@ void TaskIgroSensorPump(void *pvParameters)  // This is a task.
 
 	for (;;)
 	{
-		SensorsResponse();
-		if(SystemFlag.TurnOnPump)
-			digitalWrite(PUMP, HIGH);
+		if(!SystemFlag.BypassIgrosensor)
+		{
+			SensorsResponse();
+			PumpAction(SystemFlag.TurnOnPumpAuto);
+		}
 		else
-			digitalWrite(PUMP, LOW);
-			
+		{
+			PumpAction(SystemFlag.ManualPumpState);
+		}
 		OsDelay(50);
+	}
+}
+#endif
+
+#ifdef TASK_LCD
+void TaskLCD(void *pvParameters)  // This is a task.
+{
+	(void) pvParameters;
+	char *TimePeriod[MAX_DAY_TIME] = 
+	{
+		"Giorno",
+		"Sera",
+		"Notte",
+		"Mattino",
+	};
+	char *SetTimePeriod[3] = 
+	{
+		"Luce",
+		"Buio",
+		"Mezzo",
+	};
+	char *PumpState[MAX_PUMP_STATE] = 
+	{
+		"Pompa spenta",
+		"Pompa accesa",
+	};
+	bool RegularScreen = true, SetHour = false, SetPump = false;
+	bool SetHourDay = true, SetHourTransition = false, SetHourNight = false;
+	uint8_t ActualTime = 0;
+	uint8_t Hours = 0, TotDayHours = 24;
+	uint8_t RegularScreenCnt = 0;
+	for (;;)
+	{
+		if(RegularScreen)
+		{
+			if(RegularScreenCnt < 10)
+			{
+				LCDPrintString(ONE, LEFT_ALIGN, String(TimePeriod[SystemFlag.DayTime]));
+				LCDPrintString(TWO, LEFT_ALIGN, String(PumpState[SystemFlag.ManualPumpState]));
+			}
+			if(RegularScreenCnt >= 10)
+			{
+				if((SystemFlag.DayTime + 1) < MAX_DAY_TIME - 1)
+					LCDPrintString(ONE, CENTER_ALIGN, "Ore per:" + String(TimePeriod[SystemFlag.DayTime + 1]));
+				else
+					LCDPrintString(ONE, CENTER_ALIGN, "Ore per:" + String(TimePeriod[IN_DAY]));
+				switch(SystemFlag.DayTime)
+				{
+					case IN_DAY:
+						LCDPrintString(TWO, CENTER_ALIGN, String(SECONDS_MINUTE(DayTimeHours.DayHours) - MINUTE_SECOND(SecondCounter)));
+						break;
+					case IN_NIGHT:
+						LCDPrintString(TWO, CENTER_ALIGN, String(SECONDS_MINUTE(DayTimeHours.NightHours) - MINUTE_SECOND(SecondCounter)));
+						break;
+					case TO_DAY:
+					case TO_NIGHT:
+						LCDPrintString(TWO, CENTER_ALIGN, String(SECONDS_MINUTE(DayTimeHours.TransitionHours) - MINUTE_SECOND(SecondCounter)));
+						break;
+					default:
+						break;
+				}
+			}
+			switch(ButtonPress)
+			{
+				case UP:
+					RegularScreen = false;
+					SetPump = true;
+					ClearLCD();
+					break;
+				case DOWN:
+					break;
+				case OK:
+					RegularScreen = false;
+					SetHour = true;
+					ClearLCD();
+					break;
+				default:
+					break;
+			}
+			RegularScreenCnt++;
+			if(RegularScreenCnt == 10)
+				ClearLCD();
+			if(RegularScreenCnt == 20)
+			{
+				RegularScreenCnt = 0;
+				ClearLCD();
+			}
+		}
+		else if(SetPump)
+		{
+			SystemFlag.BypassIgrosensor = true;
+			LCDPrintString(ONE, LEFT_ALIGN, String(PumpState[SystemFlag.ManualPumpState]));
+			switch(ButtonPress)
+			{
+				case UP:
+					if(SystemFlag.ManualPumpState == PUMP_ON)
+						SystemFlag.ManualPumpState = PUMP_OFF;
+					else
+						SystemFlag.ManualPumpState = PUMP_ON;
+					ClearLCDLine(ONE);
+					break;
+				case DOWN:
+					if(SystemFlag.ManualPumpState == PUMP_ON)
+						SystemFlag.ManualPumpState = PUMP_OFF;
+					else
+						SystemFlag.ManualPumpState = PUMP_ON;
+					break;
+				case OK:
+					SetPump = false;
+					SystemFlag.BypassIgrosensor = false;
+					RegularScreen = true;
+					ClearLCD();
+					break;
+				default:
+					break;
+			}			
+		}
+		else if(SetHour)
+		{
+			LCDPrintString(ONE, LEFT_ALIGN, "Ore di:");
+			LCDPrintString(ONE, RIGHT_ALIGN, SetTimePeriod[ActualTime]);
+			LCDPrintString(TWO, CENTER_ALIGN, String(Hours) + "h");
+			switch(ButtonPress)
+			{
+				case UP:
+					if(Hours > 0)
+						Hours--;
+					else
+						Hours = TotDayHours;
+					break;
+				case DOWN:
+					if(Hours < TotDayHours)
+						Hours++;
+					else
+						Hours = 0;						
+					break;
+				case OK:
+					if(SetHourDay)
+					{
+						SetHourDay = false;
+						SetHourNight = true;
+						ActualTime++;
+						DayTimeHours.DayHours = Hours;
+						TotDayHours -= Hours;
+						Hours = 0;
+					}
+					else if(SetHourNight)
+					{
+						SetHourNight = false;
+						SetHourTransition = true;	
+						ActualTime++;
+						DayTimeHours.NightHours = Hours;
+						TotDayHours -= Hours;
+						Hours = 0;
+					}
+					else if(SetHourTransition)
+					{
+						SetHourTransition = false;
+						SetHourDay = true;
+						ActualTime = 0;
+						DayTimeHours.TransitionHours = Hours;
+						TotDayHours = 24;
+						Hours = 0;
+						SetHour = false;
+						RegularScreen = true;
+						EEPROM.update(DAY_HOUR_ADDR, DayTimeHours.DayHours);
+						EEPROM.update(NIGHT_HOUR_ADDR, DayTimeHours.NightHours);
+						EEPROM.update(TRANSITION_HOUR_ADDR, DayTimeHours.TransitionHours);
+					}
+					break;
+				default:
+					break;
+			}
+		}
+		OsDelay(250);
+	}
+}
+#endif
+
+#ifdef TASK_KEYBOARD
+void TaskKeyboard(void *pvParameters)  // This is a task.
+{
+	(void) pvParameters;
+
+	for (;;)
+	{
+		CheckButtons();
+		OsDelay(25);
 	}
 }
 #endif
