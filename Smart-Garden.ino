@@ -25,9 +25,9 @@ static void InitSystem()
 		LogDayTime();
 		LogDimming();
 		LogSecondCounter();
-		DayTimeHours.DayHours = DAY_HOURS;
-		DayTimeHours.NightHours = NIGHT_HOURS;
-		DayTimeHours.TransitionHours = TRANSITION_HOURS;
+		DayTimeHours.DayHours = DAY_HOURS_DFL;
+		DayTimeHours.NightHours = NIGHT_HOURS_DFL;
+		DayTimeHours.TransitionHours = TRANSITION_HOURS_DFL;
 		EEPROM.update(DAY_HOUR_ADDR, DayTimeHours.DayHours);
 		EEPROM.update(NIGHT_HOUR_ADDR, DayTimeHours.NightHours);
 		EEPROM.update(TRANSITION_HOUR_ADDR, DayTimeHours.TransitionHours);
@@ -51,7 +51,7 @@ void setup()
 	pinMode(DOWN_BUTTON, INPUT);
 	pinMode(OK_BUTTON, INPUT);
 	InitSystem();
-	LCDInit();
+	LCDInit();	
 #ifdef TASK_DIMMING
 	xTaskCreate(
 	TaskDimmingLed
@@ -235,14 +235,14 @@ void TaskLCD(void *pvParameters)  // This is a task.
 				switch(SystemFlag.DayTime)
 				{
 					case IN_DAY:
-						LCDPrintString(TWO, CENTER_ALIGN, String(SECONDS_MINUTE(DayTimeHours.DayHours) - MINUTE_SECOND(SecondCounter)));
+						LCDPrintString(TWO, CENTER_ALIGN, String(SECONDS_MINUTE(DayTimeHours.DayHours) - MINUTE_SECOND(SecondCounter)) + "h");
 						break;
 					case IN_NIGHT:
-						LCDPrintString(TWO, CENTER_ALIGN, String(SECONDS_MINUTE(DayTimeHours.NightHours) - MINUTE_SECOND(SecondCounter)));
+						LCDPrintString(TWO, CENTER_ALIGN, String(SECONDS_MINUTE(DayTimeHours.NightHours) - MINUTE_SECOND(SecondCounter)) + "h");
 						break;
 					case TO_DAY:
 					case TO_NIGHT:
-						LCDPrintString(TWO, CENTER_ALIGN, String(SECONDS_MINUTE(DayTimeHours.TransitionHours) - MINUTE_SECOND(SecondCounter)));
+						LCDPrintString(TWO, CENTER_ALIGN, String(SECONDS_MINUTE(DayTimeHours.TransitionHours) - MINUTE_SECOND(SecondCounter)) + "h");
 						break;
 					default:
 						break;
@@ -292,6 +292,7 @@ void TaskLCD(void *pvParameters)  // This is a task.
 						SystemFlag.ManualPumpState = PUMP_OFF;
 					else
 						SystemFlag.ManualPumpState = PUMP_ON;
+					ClearLCDLine(ONE);
 					break;
 				case OK:
 					SetPump = false;
@@ -315,12 +316,14 @@ void TaskLCD(void *pvParameters)  // This is a task.
 						Hours--;
 					else
 						Hours = TotDayHours;
+					ClearLCDLine(TWO);
 					break;
 				case DOWN:
 					if(Hours < TotDayHours)
 						Hours++;
 					else
 						Hours = 0;						
+					ClearLCDLine(TWO);
 					break;
 				case OK:
 					if(SetHourDay)
@@ -331,6 +334,7 @@ void TaskLCD(void *pvParameters)  // This is a task.
 						DayTimeHours.DayHours = Hours;
 						TotDayHours -= Hours;
 						Hours = 0;
+						ClearLCD();
 					}
 					else if(SetHourNight)
 					{
@@ -340,6 +344,7 @@ void TaskLCD(void *pvParameters)  // This is a task.
 						DayTimeHours.NightHours = Hours;
 						TotDayHours -= Hours;
 						Hours = 0;
+						ClearLCD();
 					}
 					else if(SetHourTransition)
 					{
@@ -354,6 +359,7 @@ void TaskLCD(void *pvParameters)  // This is a task.
 						EEPROM.update(DAY_HOUR_ADDR, DayTimeHours.DayHours);
 						EEPROM.update(NIGHT_HOUR_ADDR, DayTimeHours.NightHours);
 						EEPROM.update(TRANSITION_HOUR_ADDR, DayTimeHours.TransitionHours);
+						ClearLCD();
 					}
 					break;
 				default:
