@@ -8,7 +8,7 @@
 uint32_t SecondCounter;
 static uint32_t CounterToLog;
 uint32_t ActualMillis, PreviousMillis, Delay = 1000;
-uint16_t SecondForDimming = (SECONDS_HOUR(TRANSITION_HOURS) / 255);
+uint16_t SecondForDimming = (SECONDS_MINUTE(TRANSITION_HOURS) / 255);
 
 void LogFlag()
 {
@@ -39,7 +39,7 @@ void CheckTime()
 	}
 	if(SystemFlag.InDay)
 	{
-		if(SecondCounter >= SECONDS_HOUR(DAY_HOURS))
+		if(SecondCounter >= SECONDS_MINUTE(DAY_HOURS))
 		{
 			SecondCounter = 0;
 			SystemFlag.InDay = false;
@@ -48,7 +48,7 @@ void CheckTime()
 	}
 	if(SystemFlag.ToNight)
 	{
-		if(SecondCounter >= SECONDS_HOUR(TRANSITION_HOURS))
+		if(SecondCounter >= SECONDS_MINUTE(TRANSITION_HOURS))
 		{
 			SecondCounter = 0;
 			SystemFlag.ToNight = false;
@@ -58,7 +58,7 @@ void CheckTime()
 	}
 	if(SystemFlag.InNight)
 	{
-		if(SecondCounter >= SECONDS_HOUR(NIGHT_HOURS))
+		if(SecondCounter >= SECONDS_MINUTE(NIGHT_HOURS))
 		{
 			SecondCounter = 0;
 			SystemFlag.InNight = false;
@@ -67,7 +67,7 @@ void CheckTime()
 	}
 	if(SystemFlag.ToDay)
 	{
-		if(SecondCounter >= SECONDS_HOUR(TRANSITION_HOURS))
+		if(SecondCounter >= SECONDS_MINUTE(TRANSITION_HOURS))
 		{
 			SecondCounter = 0;
 			SystemFlag.ToDay = false;

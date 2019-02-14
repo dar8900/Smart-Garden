@@ -1,6 +1,7 @@
 #include "Smart-Garden.h"
 #include "Time.h"
 #include "IgroSensor.h"
+#include "TaskSelection.h"
 
 GENERAL_FLAG SystemFlag;
 int16_t Dimming = 0;
@@ -19,7 +20,7 @@ static void InitSystem()
 		SystemFlag.ToDay = false;
 		SystemFlag.ToNight = false;
 		Dimming = 255;
-		SecondCounter = SECONDS_HOUR(DAY_HOURS);
+		SecondCounter = SECONDS_MINUTE(DAY_HOURS);
 		LogFlag();
 		LogDimming();
 		LogSecondCounter();
@@ -41,7 +42,8 @@ void setup()
 	pinMode(DIMMING_LED, OUTPUT);
 	pinMode(PUMP, OUTPUT);
 	InitSystem();
-	
+
+#ifdef TASK_DIMMING
 	xTaskCreate(
 	TaskDimmingLed
 	,  (const portCHAR *) "DimmingLed"
@@ -49,7 +51,9 @@ void setup()
 	,  NULL
 	,  1  // Priority
 	,  NULL );
-	
+#endif
+
+#ifdef TASK_TIME	
 	xTaskCreate(
 	TaskTime
 	,  (const portCHAR *) "Time"
@@ -57,7 +61,9 @@ void setup()
 	,  NULL
 	,  3  // Priority
 	,  NULL );
-	
+#endif
+
+#ifdef TASK_IGROSENSORPUMP	
 		xTaskCreate(
 	TaskIgroSensorPump
 	,  (const portCHAR *) "IgroSensorPump"
@@ -65,7 +71,8 @@ void setup()
 	,  NULL
 	,  2  // Priority
 	,  NULL );
-
+#endif
+	
 }
 
 void loop() 
@@ -73,7 +80,7 @@ void loop()
 
 }
 
-
+#ifdef TASK_DIMMING
 void TaskDimmingLed(void *pvParameters)  // This is a task.
 {
 	(void) pvParameters;
@@ -118,7 +125,9 @@ void TaskDimmingLed(void *pvParameters)  // This is a task.
 		OsDelay(500);
 	}
 }
+#endif
 
+#ifdef TASK_TIME
 void TaskTime(void *pvParameters)  // This is a task.
 {
 	(void) pvParameters;
@@ -129,7 +138,9 @@ void TaskTime(void *pvParameters)  // This is a task.
 		OsDelay(10);
 	}
 }
+#endif
 
+#ifdef TASK_IGROSENSORPUMP
 void TaskIgroSensorPump(void *pvParameters)  // This is a task.
 {
 	(void) pvParameters;
@@ -145,3 +156,4 @@ void TaskIgroSensorPump(void *pvParameters)  // This is a task.
 		OsDelay(50);
 	}
 }
+#endif
