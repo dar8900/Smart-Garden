@@ -7,6 +7,9 @@ typedef enum
 	UP = 0,
 	DOWN,
 	OK,
+	LONG_UP,
+	LONG_DOWN,
+	LONG_OK,
 	NO_PRESS
 }KEYBOARD_BUTTONS;
 

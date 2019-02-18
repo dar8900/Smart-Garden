@@ -277,6 +277,7 @@ void TaskLCD(void *pvParameters)  // This is a task.
 				default:
 					break;
 			}
+			ButtonPress = NO_PRESS;
 			RegularScreenCnt++;
 			if(RegularScreenCnt == REGULAR_SCREEN_REFRESH_DELAY)
 				ClearLCD();
@@ -314,7 +315,8 @@ void TaskLCD(void *pvParameters)  // This is a task.
 					break;
 				default:
 					break;
-			}			
+			}		
+			ButtonPress = NO_PRESS;	
 		}
 		else if(SetHour)
 		{
@@ -375,6 +377,7 @@ void TaskLCD(void *pvParameters)  // This is a task.
 				default:
 					break;
 			}
+			ButtonPress = NO_PRESS;
 		}
 		OsDelay(250);
 	}
