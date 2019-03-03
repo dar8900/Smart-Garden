@@ -10,7 +10,14 @@
 #define NIGHT_HOUR_ADDR				3
 
 #define DIMMING_ADDR				4
-#define SECOND_COUNTER_ADDR			5 // 4byte
+#define SECOND_COUNTER_ADDR			5 // 4 byte
+
+#define CALENDAR_HOUR_ADDR          20
+#define CALENDAR_MINUTE_ADDR		21
+#define CALENDAR_DAY_ADDR           22
+#define CALENDAR_MONTH_ADDR         23
+#define CALENDAR_YEAR_ADDR          24 // 2 byte
+                                   
 
 typedef struct
 {
@@ -18,6 +25,7 @@ typedef struct
 	bool SaveHours;
 	bool SaveDimming;
 	bool SaveSecondCouter;
+	bool SaveCalendar;
 }FLAG_EEPROM;
 
 #endif

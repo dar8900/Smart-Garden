@@ -2,14 +2,33 @@
 #include "Smart-Garden.h"
 
 #define MINUTE_TO_LOG	10
-
-
+#define DELAY_SECOND 	1000
 
 uint32_t SecondCounter;
+uint32_t CalendarSecond;
 static uint32_t CounterToLog;
-uint32_t ActualMillis, PreviousMillis, Delay = 1000;
+static uint32_t TimeDateCounterForSave;
+uint32_t StartTime;
 uint16_t SecondForDimming = (SECONDS_MINUTE(TRANSITION_HOURS_DFL) / 255);
 DAY_TIME_HOURS DayTimeHours;
+CALENDAR_VAR TimeDate;
+
+static uint8_t DayForMonth[12]
+{
+	31,
+	28,
+	31,
+	30,
+	31,
+	30,
+	31,
+	31,
+	30,
+	31,
+	30,
+	31,	
+};
+
 
 void LogDayTime()
 {
@@ -26,14 +45,48 @@ void LogSecondCounter()
 	FlagForSave.SaveSecondCouter = true;
 }
 
+
+static void RefreshCalendar(CALENDAR_VAR *TimeToRefresh)
+{
+	if(CalendarSecond == 60)
+	{
+		CalendarSecond = 0;
+		TimeToRefresh->Minute++;
+		if(TimeToRefresh->Minute == 60)
+		{
+			TimeToRefresh->Hour++;
+			TimeToRefresh->Minute = 0;
+			if(TimeToRefresh->Hour == 24)
+			{
+				TimeToRefresh->Day++;
+				TimeToRefresh->Hour = 0;
+				if(TimeToRefresh->Day == (DayForMonth[TimeToRefresh->Month] + 1))
+				{
+					TimeToRefresh->Month++;
+					TimeToRefresh->Day = 0;
+					if(TimeToRefresh->Month == 12)
+					{
+						TimeToRefresh->Year++;
+						TimeToRefresh->Month = 0;
+					}
+				}
+			}
+		}			
+	}
+}
+
+
 void CheckTime()
 {
-	ActualMillis = millis();
-	if(ActualMillis - PreviousMillis >= Delay)
+	if(StartTime == 0)
+		StartTime = millis();
+	if(millis() - StartTime >= DELAY_SECOND)
 	{
-		PreviousMillis = ActualMillis;
+		StartTime = 0;
+		CalendarSecond++;
 		SecondCounter++;
 		CounterToLog++;
+		TimeDateCounterForSave++;
 	}
 	switch(SystemFlag.DayTime)
 	{
@@ -77,4 +130,33 @@ void CheckTime()
 		LogDimming();
 		LogSecondCounter();
 	}
+	RefreshCalendar(&TimeDate);
+	if(TimeDateCounterForSave == LOG_PERIOD(30))
+	{
+		FlagForSave.SaveCalendar = true;
+		TimeDateCounterForSave = 0;
+	}
+}
+
+void SetTimeDate(uint8_t Hour, uint8_t Minute, uint8_t Day, uint8_t Month, uint16_t Year, CALENDAR_VAR *TimeDateToSet)
+{
+	TimeDateToSet->Hour = Hour;
+	TimeDateToSet->Minute = Minute;
+	TimeDateToSet->Day = Day;
+	TimeDateToSet->Month = Month;
+	TimeDateToSet->Year = Year;
+}
+
+void SaveTimeDate()
+{
+	EEPROM.update(CALENDAR_HOUR_ADDR, TimeDate.Hour);
+	EEPROM.update(CALENDAR_MINUTE_ADDR, TimeDate.Minute);
+	EEPROM.update(CALENDAR_DAY_ADDR, TimeDate.Day);
+	EEPROM.update(CALENDAR_MONTH_ADDR, TimeDate.Month);
+	EEPROM.put(CALENDAR_YEAR_ADDR, TimeDate.Year);
+}
+
+void SetTime()
+{
+	
 }

@@ -15,12 +15,28 @@
  
 #define LOG_PERIOD(Minute)  	    (Minute * SECOND_IN_MINUTE)
 
+
+#define DFLT_HOUR					9
+#define DFLT_MINUTE					0
+#define DFLT_DAY					28
+#define DFLT_MONTH					5  // uno in meno per il vettore dei giorni
+#define DFLT_YEAR					2019
+
 typedef struct
 {
 	uint8_t DayHours;
 	uint8_t NightHours;
 	uint8_t TransitionHours;
 }DAY_TIME_HOURS;
+
+typedef struct
+{
+	uint8_t Hour;
+	uint8_t Minute;
+	uint8_t Day;
+	uint8_t Month;
+	uint16_t Year;
+}CALENDAR_VAR;
 
 typedef enum
 {
@@ -41,9 +57,12 @@ typedef enum
 extern uint32_t SecondCounter;
 extern uint16_t SecondForDimming;
 extern DAY_TIME_HOURS DayTimeHours;
+extern CALENDAR_VAR TimeDate;
 
 void CheckTime(void);
 void LogDayTime(void);
 void LogDimming(void);
 void LogSecondCounter(void);
+void SaveTimeDate(void);
+void SetTimeDate(uint8_t Hour, uint8_t Minute, uint8_t Day, uint8_t Month, uint16_t Year, CALENDAR_VAR *TimeDateToSet);
 #endif

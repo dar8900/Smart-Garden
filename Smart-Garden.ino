@@ -21,6 +21,8 @@ void TaskEeprom(void *pvParameters);
 static void InitSystem()
 {
 	SystemFlag.DayTime = EEPROM.read(DAY_TIME_ADDR);
+	
+	// Se è il primo avvio
 	if(SystemFlag.DayTime > MAX_DAY_TIME)
 	{
 		SystemFlag.DayTime = IN_DAY;
@@ -33,6 +35,7 @@ static void InitSystem()
 		DayTimeHours.NightHours = NIGHT_HOURS_DFL;
 		DayTimeHours.TransitionHours = TRANSITION_HOURS_DFL;
 		FlagForSave.SaveHours = true;
+		SetTimeDate(DFLT_HOUR, DFLT_MINUTE, DFLT_DAY, DFLT_MONTH, DFLT_YEAR, &TimeDate);
 	}
 	else
 	{
@@ -176,7 +179,7 @@ void TaskTime(void *pvParameters)  // This is a task.
 	for (;;)
 	{
 		CheckTime();
-		OsDelay(10);
+		OsDelay(100);
 	}
 }
 #endif
@@ -224,7 +227,7 @@ void TaskLCD(void *pvParameters)  // This is a task.
 		"Pompa spenta",
 		"Pompa accesa",
 	};
-	bool RegularScreen = true, SetHour = false, SetPump = false;
+	bool RegularScreen = true, SetHour = false, SetPump = false, SetTime = false;
 	bool SetHourDay = true, SetHourTransition = false, SetHourNight = false;
 	uint8_t ActualTime = 0;
 	uint8_t Hours = 0, TotDayHours = 24;
@@ -235,26 +238,26 @@ void TaskLCD(void *pvParameters)  // This is a task.
 		{
 			if(RegularScreenCnt < REGULAR_SCREEN_REFRESH_DELAY)
 			{
-				LCDPrintString(ONE, LEFT_ALIGN, String(TimePeriod[SystemFlag.DayTime]));
-				LCDPrintString(TWO, LEFT_ALIGN, String(PumpState[SystemFlag.ManualPumpState]));
+				LCDPrintString(THREE, LEFT_ALIGN, String(TimePeriod[SystemFlag.DayTime]));
+				LCDPrintString(FOUR, LEFT_ALIGN, String(PumpState[SystemFlag.ManualPumpState]));
 			}
 			if(RegularScreenCnt >= (REGULAR_SCREEN_REFRESH_DELAY + 10))
 			{
 				if((SystemFlag.DayTime + 1) < MAX_DAY_TIME - 1)
-					LCDPrintString(ONE, CENTER_ALIGN, "Ore per:" + String(TimePeriod[SystemFlag.DayTime + 1]));
+					LCDPrintString(THREE, CENTER_ALIGN, "Ore per:" + String(TimePeriod[SystemFlag.DayTime + 1]));
 				else
-					LCDPrintString(ONE, CENTER_ALIGN, "Ore per:" + String(TimePeriod[IN_DAY]));
+					LCDPrintString(THREE, CENTER_ALIGN, "Ore per:" + String(TimePeriod[IN_DAY]));
 				switch(SystemFlag.DayTime)
 				{
 					case IN_DAY:
-						LCDPrintString(TWO, CENTER_ALIGN, String(SECONDS_MINUTE(DayTimeHours.DayHours) - MINUTE_SECOND(SecondCounter)) + "h");
+						LCDPrintString(FOUR, CENTER_ALIGN, String(SECONDS_MINUTE(DayTimeHours.DayHours) - MINUTE_SECOND(SecondCounter)) + "h");
 						break;
 					case IN_NIGHT:
-						LCDPrintString(TWO, CENTER_ALIGN, String(SECONDS_MINUTE(DayTimeHours.NightHours) - MINUTE_SECOND(SecondCounter)) + "h");
+						LCDPrintString(FOUR, CENTER_ALIGN, String(SECONDS_MINUTE(DayTimeHours.NightHours) - MINUTE_SECOND(SecondCounter)) + "h");
 						break;
 					case TO_DAY:
 					case TO_NIGHT:
-						LCDPrintString(TWO, CENTER_ALIGN, String(SECONDS_MINUTE(DayTimeHours.TransitionHours) - MINUTE_SECOND(SecondCounter)) + "h");
+						LCDPrintString(FOUR, CENTER_ALIGN, String(SECONDS_MINUTE(DayTimeHours.TransitionHours) - MINUTE_SECOND(SecondCounter)) + "h");
 						break;
 					default:
 						break;
@@ -268,6 +271,9 @@ void TaskLCD(void *pvParameters)  // This is a task.
 					ClearLCD();
 					break;
 				case DOWN:
+					RegularScreen = false;
+					SetTime = true;
+					ClearLCD();
 					break;
 				case OK:
 					RegularScreen = false;
@@ -379,6 +385,10 @@ void TaskLCD(void *pvParameters)  // This is a task.
 			}
 			ButtonPress = NO_PRESS;
 		}
+		else if(SetTime)
+		{
+						
+		}
 		OsDelay(250);
 	}
 }
@@ -425,6 +435,11 @@ void TaskEeprom(void *pvParameters)  // This is a task.
 		{
 			FlagForSave.SaveSecondCouter = false;
 			EEPROM.put(SECOND_COUNTER_ADDR, SecondCounter);
+		}
+		if(FlagForSave.SaveCalendar)
+		{
+			FlagForSave.SaveCalendar = false;
+			SaveTimeDate();
 		}
 		OsDelay(1000);
 	}

@@ -3,8 +3,8 @@
 #include <Arduino.h>
 #include <stdint.h>
 
-#define LCD16
-#undef  LCD20
+#undef LCD16
+#define  LCD20
 
 #define LCD_ADDR                0x27
 
