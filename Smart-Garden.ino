@@ -4,6 +4,7 @@
 #include "TaskSelection.h"
 #include "Keyboard.h"
 #include "LCDLib.h"
+#include "SDLog.h"
 
 #define REGULAR_SCREEN_REFRESH_DELAY 	40
 
@@ -17,6 +18,7 @@ void TaskIgroSensorPump( void *pvParameters );
 void TaskLCD(void *pvParameters);
 void TaskKeyboard(void *pvParameters);
 void TaskEeprom(void *pvParameters);
+void TaskSD(void *pvParameters);
 
 static void InitSystem()
 {
@@ -44,6 +46,7 @@ static void InitSystem()
 		DayTimeHours.DayHours = EEPROM.read(DAY_HOUR_ADDR);
 		DayTimeHours.NightHours = EEPROM.read(NIGHT_HOUR_ADDR);
 		DayTimeHours.TransitionHours = EEPROM.read(TRANSITION_HOUR_ADDR);
+		LoadTimeDate(&TimeDate);
 	}
 }
 
@@ -57,6 +60,7 @@ void setup()
 	pinMode(OK_BUTTON, INPUT);
 	InitSystem();
 	LCDInit();	
+	
 #ifdef TASK_DIMMING
 	xTaskCreate(
 	TaskDimmingLed
@@ -78,7 +82,7 @@ void setup()
 #endif
 
 #ifdef TASK_IGROSENSORPUMP	
-		xTaskCreate(
+	xTaskCreate(
 	TaskIgroSensorPump
 	,  (const portCHAR *) "IgroSensorPump"
 	,  64  // Stack size
@@ -88,7 +92,7 @@ void setup()
 #endif
 
 #ifdef TASK_LCD	
-		xTaskCreate(
+	xTaskCreate(
 	TaskLCD
 	,  (const portCHAR *) "LCD"
 	,  128 // Stack size
@@ -98,7 +102,7 @@ void setup()
 #endif
 
 #ifdef TASK_KEYBOARD	
-		xTaskCreate(
+	xTaskCreate(
 	TaskKeyboard
 	,  (const portCHAR *) "Keyboard"
 	,  64  // Stack size
@@ -108,12 +112,22 @@ void setup()
 #endif
 
 #ifdef TASK_EEPROM	
-		xTaskCreate(
+	xTaskCreate(
 	TaskEeprom
 	,  (const portCHAR *) "Eeprom"
 	,  64  // Stack size
 	,  NULL
 	,  0 // Priority
+	,  NULL );
+#endif
+
+#ifdef TASK_SD	
+	xTaskCreate(
+	TaskSD
+	,  (const portCHAR *) "SD"
+	,  64  // Stack size
+	,  NULL
+	,  2 // Priority
 	,  NULL );
 #endif
 }
@@ -227,11 +241,22 @@ void TaskLCD(void *pvParameters)  // This is a task.
 		"Pompa spenta",
 		"Pompa accesa",
 	};
+	char *TimeDateStr[] = 
+	{
+		"Ore",
+		"Minuti",
+		"Mese",
+		"Giorno",
+		"Anno",
+	};
 	bool RegularScreen = true, SetHour = false, SetPump = false, SetTime = false;
 	bool SetHourDay = true, SetHourTransition = false, SetHourNight = false;
 	uint8_t ActualTime = 0;
 	uint8_t Hours = 0, TotDayHours = 24;
 	uint8_t RegularScreenCnt = 0;
+	uint8_t TimeDateValue[5] = {0, 0, 0, 1, 19}; 
+	uint8_t MaxTimeSetValue = 23, MinTimeSetValue = 0;
+	uint8_t WichTimeStrValues = 0;
 	for (;;)
 	{
 		if(RegularScreen)
@@ -387,7 +412,73 @@ void TaskLCD(void *pvParameters)  // This is a task.
 		}
 		else if(SetTime)
 		{
-						
+			LCDPrintString(ONE, CENTER_ALIGN, "Imposta");
+			LCDPrintString(TWO, CENTER_ALIGN, TimeDateStr[WichTimeStrValues]);
+			LCDPrintString(THREE, CENTER_ALIGN, String(TimeDateValue[WichTimeStrValues]));
+			switch(ButtonPress)
+			{
+				case UP:
+					if(TimeDateValue[WichTimeStrValues] > MinTimeSetValue)
+						TimeDateValue[WichTimeStrValues]--;
+					else
+						TimeDateValue[WichTimeStrValues] = MaxTimeSetValue;
+					ClearLCDLine(THREE);
+					break;
+				case DOWN:
+					if(TimeDateValue[WichTimeStrValues] < MaxTimeSetValue)
+						TimeDateValue[WichTimeStrValues]++;
+					else
+						TimeDateValue[WichTimeStrValues] = MinTimeSetValue;	
+					ClearLCDLine(THREE);
+					break;
+				case OK:
+					switch(WichTimeStrValues)
+					{
+						case 0: // Setto i max/min per i minuti
+							MaxTimeSetValue = 59;
+							MinTimeSetValue = 0;
+							WichTimeStrValues++;
+							ClearLCDLine(TWO);
+							ClearLCDLine(THREE);
+							break;
+						case 1: // Setto i max/min per i mesi
+							MaxTimeSetValue = 12;
+							MinTimeSetValue = 1;
+							WichTimeStrValues++;
+							ClearLCDLine(TWO);
+							ClearLCDLine(THREE);
+							break;
+						case 2: // Setto i max/min per i giorni
+							MaxTimeSetValue = DayForMonth[TimeDateValue[2] - 1];
+							MinTimeSetValue = 1;
+							WichTimeStrValues++;
+							ClearLCDLine(TWO);
+							ClearLCDLine(THREE);
+							break;
+						case 3: // Setto i max/min per gli anni
+							MaxTimeSetValue = 99;
+							MinTimeSetValue = 19;
+							WichTimeStrValues++;
+							ClearLCDLine(TWO);
+							ClearLCDLine(THREE);
+							break;
+						case 4: // Resetto i max/min per le ore
+							MaxTimeSetValue = 23;
+							MinTimeSetValue = 0;
+							WichTimeStrValues = 0;
+							SetTimeDate(TimeDateValue[0], TimeDateValue[1], TimeDateValue[3], TimeDateValue[2] - 1, TimeDateValue[4] + 2000, &TimeDate);
+							SetTime = false;
+							RegularScreen = true;
+							ClearLCD();							
+							break;
+						default:
+							break;						
+					}
+					break;
+				default:
+					break;
+			}		
+			ButtonPress = NO_PRESS;							
 		}
 		OsDelay(250);
 	}
@@ -444,4 +535,18 @@ void TaskEeprom(void *pvParameters)  // This is a task.
 		OsDelay(1000);
 	}
 }
+#endif
+
+#ifdef TASK_SD
+void TaskSD(void *pvParameters)  // This is a task.
+{
+	(void) pvParameters;
+	SDBegin();	
+	for(;;)
+	{
+		LogToSD();
+		OsDelay(200);
+	}
+}
+
 #endif

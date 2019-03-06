@@ -15,6 +15,7 @@ typedef struct
 	bool RefreshDimming;
 	bool SettingHours;
 	bool BypassIgrosensor;
+	bool SDInitialize;
 }GENERAL_FLAG;
 
 typedef enum

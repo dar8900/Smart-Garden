@@ -13,4 +13,6 @@
 
 #define TASK_EEPROM
 
+#define TASK_SD
+
 #endif

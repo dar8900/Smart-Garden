@@ -8,10 +8,11 @@
 uint16_t SensorsValue[MAX_SENSORS][MAX_SAMPLE];
 uint8_t Sample;
 static bool StopReading;
+uint16_t SensorsMeanResponse;
 
 void SensorsResponse()
 {
-	uint16_t MeanSensors[MAX_SENSORS] = {0}, TotalMean = 0;
+	uint16_t MeanSensors[MAX_SENSORS] = {0};
 	uint8_t SampleIndex = 0, SensorIndex = 0;
 	if(!StopReading)
 	{
@@ -32,10 +33,10 @@ void SensorsResponse()
 				MeanSensors[SensorIndex] += SensorsValue[SensorIndex][SampleIndex];
 			}
 			MeanSensors[SensorIndex] /= MAX_SAMPLE;
-			TotalMean += MeanSensors[SensorIndex];
+			SensorsMeanResponse += MeanSensors[SensorIndex];
 		}
-		TotalMean /= MAX_SENSORS;
-		if(TotalMean >= PUMP_ACTIVATION_THR)
+		SensorsMeanResponse /= MAX_SENSORS;
+		if(SensorsMeanResponse >= PUMP_ACTIVATION_THR)
 			SystemFlag.TurnOnPumpAuto = true;
 		else 
 			SystemFlag.TurnOnPumpAuto = false;

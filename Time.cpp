@@ -12,8 +12,9 @@ uint32_t StartTime;
 uint16_t SecondForDimming = (SECONDS_MINUTE(TRANSITION_HOURS_DFL) / 255);
 DAY_TIME_HOURS DayTimeHours;
 CALENDAR_VAR TimeDate;
+uint16_t LogToSDPeriod;
 
-static uint8_t DayForMonth[12]
+uint8_t DayForMonth[12]
 {
 	31,
 	28,
@@ -87,6 +88,8 @@ void CheckTime()
 		SecondCounter++;
 		CounterToLog++;
 		TimeDateCounterForSave++;
+		if(SystemFlag.SDInitialize)
+			LogToSDPeriod++;
 	}
 	switch(SystemFlag.DayTime)
 	{
@@ -140,11 +143,13 @@ void CheckTime()
 
 void SetTimeDate(uint8_t Hour, uint8_t Minute, uint8_t Day, uint8_t Month, uint16_t Year, CALENDAR_VAR *TimeDateToSet)
 {
-	TimeDateToSet->Hour = Hour;
+	CalendarSecond = 0;
+	TimeDateToSet->Hour   = Hour;
 	TimeDateToSet->Minute = Minute;
-	TimeDateToSet->Day = Day;
-	TimeDateToSet->Month = Month;
-	TimeDateToSet->Year = Year;
+	TimeDateToSet->Day    = Day;
+	TimeDateToSet->Month  = Month;
+	TimeDateToSet->Year   = Year;
+	FlagForSave.SaveCalendar = true;
 }
 
 void SaveTimeDate()
@@ -156,7 +161,12 @@ void SaveTimeDate()
 	EEPROM.put(CALENDAR_YEAR_ADDR, TimeDate.Year);
 }
 
-void SetTime()
+void LoadTimeDate(CALENDAR_VAR *TimeDateToLoad)
 {
-	
+	CalendarSecond = 0;
+	TimeDateToLoad->Hour   = EEPROM.read(CALENDAR_HOUR_ADDR);
+	TimeDateToLoad->Minute = EEPROM.read(CALENDAR_MINUTE_ADDR);
+	TimeDateToLoad->Day    = EEPROM.read(CALENDAR_DAY_ADDR);
+	TimeDateToLoad->Month  = EEPROM.read(CALENDAR_MONTH_ADDR);
+	EEPROM.get(CALENDAR_YEAR_ADDR, TimeDateToLoad->Year);
 }

@@ -16,6 +16,8 @@ typedef enum
 	MAX_PUMP_STATE
 }PUMP_STATE;
 
+extern uint16_t SensorsMeanResponse;
+
 void SensorsResponse(void);
 void PumpAction(bool IsOn);
 
