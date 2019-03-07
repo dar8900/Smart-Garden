@@ -19,15 +19,17 @@ typedef struct
 	bool SDInitialize;
 	bool BTActive;
 	bool BypassNormalLcd;
+	bool BypassNormalDimming;
 }GENERAL_FLAG;
 
 typedef enum
 {
-	DIMMING_LED = 3,
-	PUMP        = 5,	
-	UP_BUTTON   = 6,
-	DOWN_BUTTON = 7,
-	OK_BUTTON   = 8
+	DIMMING_LED 	= 3,
+	PUMP        	= 5,	
+	UP_BUTTON   	= 6,
+	DOWN_BUTTON 	= 7,
+	OK_BUTTON   	= 8,
+	BT_LED_ACTIVE   = 10
 }PINS;
 
 extern GENERAL_FLAG SystemFlag;

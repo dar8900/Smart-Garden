@@ -4,6 +4,7 @@
 #include "Time.h"
 #include "Keyboard.h"
 #include "IgroSensor.h"
+#include "TaskBT.h"
 
 #define REGULAR_SCREEN_REFRESH_DELAY 	40
 

@@ -10,6 +10,10 @@
 
 #endif
 
+void BTInit(String ModuleName);
 void IsBTActive(void);
+void WriteResponse(String Response);
+String ReadCommand(void);
+uint16_t ReadValue(void);
 
 #endif

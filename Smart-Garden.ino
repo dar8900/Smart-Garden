@@ -20,6 +20,7 @@ static void InitSystem()
 	pinMode(UP_BUTTON, INPUT);
 	pinMode(DOWN_BUTTON, INPUT);
 	pinMode(OK_BUTTON, INPUT);
+	pinMode(BT_LED_ACTIVE, INPUT);
 	
 	SystemFlag.DayTime = EEPROM.read(DAY_TIME_ADDR);
 	

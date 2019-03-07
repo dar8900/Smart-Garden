@@ -16,6 +16,10 @@ AT+NAMEstring   Al posto di "string" mettere il nome che vuoi dare al modulo (ma
 AT+PINxxxx      Imposta il pincode del modulo bluetooth (es.1234)
 */
 
+
+uint16_t StartCntToActive;
+bool BTActive = false;
+
 void BTInit(String ModuleName)
 {
 	Serial.println("Task BT init");
@@ -34,26 +38,44 @@ void BTInit(String ModuleName)
 
 void IsBTActive()
 {
-	String ATCom = "AT", Response = "";
-	Serial2.write(ATCom.c_str());
-	if (Serial2.available())
+	if(StartCntToActive == 0 && digitalRead(BT_LED_ACTIVE))
+		StartCntToActive = millis();		
+	else
 	{
-		Response = String(Serial2.read());
-		if(Response == "OK")
-			SystemFlag.BTActive = false;
+		StartCntToActive = 0;
+		SystemFlag.BTActive = false;
+	}
+	if(StartCntToActive > 0)
+	{
+		if(digitalRead(BT_LED_ACTIVE))
+			BTActive = true;
 		else
+			BTActive = false;
+		if(millis() - StartCntToActive >= 2000 && BTActive)
+		{
+			StartCntToActive = 0;
 			SystemFlag.BTActive = true;
+		}
 	}
 }
 
 
 void WriteResponse(String Response)
 {
-	
+	Serial2.println(Response);	
 }
 
 String ReadCommand()
 {
-	
-	
+	String ReadedCommand = "";
+	while(Serial2.available())
+	{
+		ReadedCommand += Serial2.readString();
+	}
+	return ReadedCommand;
+}
+
+uint16_t ReadValue()
+{
+	return (uint16_t)Serial2.read();	
 }
