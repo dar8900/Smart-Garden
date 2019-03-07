@@ -4,6 +4,7 @@
 #include <Arduino_FreeRTOS.h>
 #include <EEPROM.h>
 #include "EepromAddr.h"
+#include "TaskSelection.h"
 
 #define OsDelay(ms)  vTaskDelay( ms / portTICK_PERIOD_MS ); // wait for one second
 
@@ -16,6 +17,8 @@ typedef struct
 	bool SettingHours;
 	bool BypassIgrosensor;
 	bool SDInitialize;
+	bool BTActive;
+	bool BypassNormalLcd;
 }GENERAL_FLAG;
 
 typedef enum

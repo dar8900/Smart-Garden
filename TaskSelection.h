@@ -15,4 +15,6 @@
 
 #define TASK_SD
 
+#define TASK_BT
+
 #endif
