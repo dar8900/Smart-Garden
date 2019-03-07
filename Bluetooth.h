@@ -13,7 +13,7 @@
 void BTInit(String ModuleName);
 void IsBTActive(void);
 void WriteResponse(String Response);
-String ReadCommand(void);
+String ReadString(void);
 uint16_t ReadValue(void);
 
 #endif

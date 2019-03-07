@@ -65,7 +65,7 @@ void WriteResponse(String Response)
 	Serial2.println(Response);	
 }
 
-String ReadCommand()
+String ReadString()
 {
 	String ReadedCommand = "";
 	while(Serial2.available())
@@ -77,5 +77,10 @@ String ReadCommand()
 
 uint16_t ReadValue()
 {
-	return (uint16_t)Serial2.read();	
+	uint16_t ReadedValue = 25;
+	while(Serial2.available())
+	{
+		ReadedValue = (uint16_t)Serial2.read();
+	}
+	return ReadedValue;	
 }

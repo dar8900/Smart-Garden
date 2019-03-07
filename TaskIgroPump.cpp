@@ -9,7 +9,7 @@ void TaskIgroSensorPump(void *pvParameters)  // This is a task.
 
 	for (;;)
 	{
-		if(!SystemFlag.BypassIgrosensor)
+		if(!SystemFlag.BypassIgrosensor && !SystemFlag.BypassIgrosensorBT)
 		{
 			SensorsResponse();
 			PumpAction(SystemFlag.TurnOnPumpAuto);

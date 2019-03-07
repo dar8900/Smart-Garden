@@ -20,6 +20,7 @@ typedef struct
 	bool BTActive;
 	bool BypassNormalLcd;
 	bool BypassNormalDimming;
+	bool BypassIgrosensorBT;
 }GENERAL_FLAG;
 
 typedef enum

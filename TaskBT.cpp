@@ -17,62 +17,121 @@ const COMMAND_RESPONSE_S PossibleCommandsResponse[MAX_CMD_RSP_VALUES]
 	{"Imposta ore mezzo" ,  "Ore mezzo impostate"   ,   BT_SET_MIDHOUR   },
 };
 
+static String ReadCommand()
+{
+	String ReadedString = "";
+	ReadedString = ReadString();
+	return ReadedString;	
+}
+
+
+static uint8_t ReadHour()
+{
+	uint8_t Hour = 0;
+	do
+	{
+		Hour = (uint8_t)ReadValue();
+		OsDelay(50);
+	}while(Hour == 25);
+	return Hour; 
+}
+
+
+
 void TaskBT(void *pvParameters)  // This is a task.
 {
 	(void) pvParameters;
 	uint16_t CheckBtActiveCnt = 0;
+	bool CmdExecuted = false, CommandFound = false;
 	String Command = "";
 	uint8_t CmdRspIndex = 0;
+	uint8_t HourToRead = 0;
 	for(;;)
 	{
 		IsBTActive();
 		if(SystemFlag.BTActive)
 		{
-			for(CmdRspIndex = 0; CmdRspIndex < MAX_CMD_RSP_VALUES; CmdRspIndex++)
+			Command = ReadCommand();
+			if(Command != "")
 			{
-				Command = ReadCommand();
-				if(Command == PossibleCommandsResponse[CmdRspIndex].Command)
+				for(CmdRspIndex = 0; CmdRspIndex < MAX_CMD_RSP_VALUES; CmdRspIndex++)
 				{
-					switch(PossibleCommandsResponse[CmdRspIndex].CmdRspValue)
+					if(Command == PossibleCommandsResponse[CmdRspIndex].Command)
 					{
-						case BT_PUMP_ON:
-							SystemFlag.BypassNormalLcd = true;
-							SystemFlag.BypassIgrosensor = true;
-							SystemFlag.ManualPumpState = PUMP_ON;
-							break;
-						case BT_PUMP_OFF:
-							SystemFlag.BypassNormalLcd = true;
-							SystemFlag.BypassIgrosensor = true;
-							SystemFlag.ManualPumpState = PUMP_OFF;
-							break;
-						case BT_LED_ON:
-							SystemFlag.BypassNormalLcd = true;
-							SystemFlag.BypassNormalDimming = true;
-							Dimming = 255;
-							SystemFlag.RefreshDimming = true;
-							break;
-						case BT_LED_OFF:
-							SystemFlag.BypassNormalLcd = true;
-							SystemFlag.BypassNormalDimming = true;
-							Dimming = 0;
-							SystemFlag.RefreshDimming = true;
-							break;
-						case BT_SET_DAY:
-							break;
-						case BT_SET_NIGHT:
-							break;
-						case BT_SET_MIDHOUR:
-							break;
-						default:	
-							break;
+						CommandFound = true;
+						switch(PossibleCommandsResponse[CmdRspIndex].CmdRspValue)
+						{
+							case BT_PUMP_ON:
+								SystemFlag.BypassNormalLcd = true;
+								SystemFlag.BypassIgrosensorBT = true;
+								SystemFlag.ManualPumpState = PUMP_ON;
+								CmdExecuted = true;
+								break;
+							case BT_PUMP_OFF:
+								SystemFlag.BypassNormalLcd = true;
+								SystemFlag.BypassIgrosensorBT = true;
+								SystemFlag.ManualPumpState = PUMP_OFF;
+								CmdExecuted = true;
+								break;
+							case BT_LED_ON:
+								SystemFlag.BypassNormalLcd = true;
+								SystemFlag.BypassNormalDimming = true;
+								Dimming = 255;
+								SystemFlag.RefreshDimming = true;
+								CmdExecuted = true;
+								break;
+							case BT_LED_OFF:
+								SystemFlag.BypassNormalLcd = true;
+								SystemFlag.BypassNormalDimming = true;
+								Dimming = 0;
+								SystemFlag.RefreshDimming = true;
+								CmdExecuted = true;
+								break;
+							case BT_SET_DAY:
+								HourToRead = ReadHour();
+								if(HourToRead < 24)
+								{
+									DayTimeHours.DayHours = HourToRead;
+									CmdExecuted = true;
+								}
+								else
+								{
+									CmdExecuted = false;
+									WriteResponse("Comando non eseguito");
+									WriteResponse("Ora inserita incorretta");
+								}
+								break;
+							case BT_SET_NIGHT:
+								break;
+							case BT_SET_MIDHOUR:
+								break;
+							default:	
+								break;
+						}
+						if(CmdExecuted)
+						{
+							WriteResponse(PossibleCommandsResponse[CmdRspIndex].Response);
+							CmdExecuted = false;
+						}
+						break;
 					}
-					WriteResponse(PossibleCommandsResponse[CmdRspIndex].Response);
 				}
+				if(CommandFound)
+					CommandFound = false;
+				else
+					WriteResponse("Comando non trovato");
 			}
 			
 		}
-		OsDelay(100);
+		else
+		{
+			SystemFlag.BypassNormalLcd = false;
+			SystemFlag.BypassNormalDimming = false;		
+			SystemFlag.BypassIgrosensorBT = false;			
+		}
+		OsDelay(200);
 	}
 }
+
 
 #endif
