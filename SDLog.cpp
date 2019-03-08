@@ -30,6 +30,7 @@ void LogToSD()
 	{
 		if(LogToSDPeriod == LOG_PERIOD_SD)
 		{
+			SystemFlag.SDLogging = true;
 			LogToSDPeriod = 0;
 			NameOfFile += String(TimeDate.Day) + "-" + String(TimeDate.Month) + "-" + String(TimeDate.Year);
 			NameOfFile += ".CSV";
@@ -46,8 +47,10 @@ void LogToSD()
 			// if the file isn't open, pop up an error:
 			else
 			{
-				
+				Serial.println("TASK SD: file non aperto");
 			}
+			delay(500);
 		}
+		SystemFlag.SDLogging = false;
 	}
 }

@@ -5,11 +5,17 @@
 #include "LCDLib.h"
 // #include "SDLog.h"
 #include "TaskCreate.h"
+#include "Icons.cpp"
 
+// extern const short BTIcon[];
+// extern const short SDIcon[];
+// extern const short SunIcon[];
+// extern const short MoonIcon[];
+// extern const short MidHoursIcon[];
+// extern const short PumpIcon[];
 
 GENERAL_FLAG SystemFlag;
 FLAG_EEPROM FlagForSave;
-
 
 
 static void InitSystem()
@@ -50,10 +56,21 @@ static void InitSystem()
 	}
 }
 
+static void CreateSystemIcons()
+{
+	LCDCreateIcon(BTIcon, BT_ICON);
+	LCDCreateIcon(SDIcon, SD_ICON);
+	LCDCreateIcon(SunIcon, SUN_ICON);
+	LCDCreateIcon(MoonIcon, MOON_ICON);
+	LCDCreateIcon(MidHoursIcon, MIDHOURS_ICON);
+	LCDCreateIcon(PumpIcon, PUMP_ICON);	
+}
+
 void setup() 
 {
 	InitSystem();
-	LCDInit();	
+	LCDInit();
+	CreateSystemIcons();
 	OSInit();
 }
 

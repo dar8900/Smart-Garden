@@ -11,12 +11,13 @@
 typedef struct 
 {
 	uint8_t DayTime;
-	bool TurnOnPumpAuto;
 	uint8_t ManualPumpState;
+	bool TurnOnPumpAuto;
 	bool RefreshDimming;
 	bool SettingHours;
 	bool BypassIgrosensor;
 	bool SDInitialize;
+	bool SDLogging;
 	bool BTActive;
 	bool BypassNormalLcd;
 	bool BypassNormalDimming;
@@ -32,6 +33,17 @@ typedef enum
 	OK_BUTTON   	= 8,
 	BT_LED_ACTIVE   = 10
 }PINS;
+
+typedef enum
+{
+	BT_ICON = 0,
+	SD_ICON,
+	SUN_ICON,
+	MOON_ICON,
+	MIDHOURS_ICON,
+	PUMP_ICON,
+	MAX_ICON
+}ICONS;
 
 extern GENERAL_FLAG SystemFlag;
 extern int16_t Dimming;

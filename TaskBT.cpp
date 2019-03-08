@@ -31,11 +31,91 @@ static uint8_t ReadHour()
 	do
 	{
 		Hour = (uint8_t)ReadValue();
-		OsDelay(50);
+		OsDelay(100);
 	}while(Hour == 25);
 	return Hour; 
 }
 
+
+static bool ExecuteCommand(uint8_t CmdValue)
+{
+	bool CmdExecuted = false;
+	uint8_t HourToRead = 0;
+	switch(CmdValue)
+	{
+		case BT_PUMP_ON:
+			SystemFlag.BypassNormalLcd = true;
+			SystemFlag.BypassIgrosensorBT = true;
+			SystemFlag.ManualPumpState = PUMP_ON;
+			CmdExecuted = true;
+			break;
+		case BT_PUMP_OFF:
+			SystemFlag.BypassNormalLcd = true;
+			SystemFlag.BypassIgrosensorBT = true;
+			SystemFlag.ManualPumpState = PUMP_OFF;
+			CmdExecuted = true;
+			break;
+		case BT_LED_ON:
+			SystemFlag.BypassNormalLcd = true;
+			SystemFlag.BypassNormalDimming = true;
+			Dimming = 255;
+			SystemFlag.RefreshDimming = true;
+			CmdExecuted = true;
+			break;
+		case BT_LED_OFF:
+			SystemFlag.BypassNormalLcd = true;
+			SystemFlag.BypassNormalDimming = true;
+			Dimming = 0;
+			SystemFlag.RefreshDimming = true;
+			CmdExecuted = true;
+			break;
+		case BT_SET_DAY:
+			HourToRead = ReadHour();
+			if(HourToRead < 24)
+			{
+				DayTimeHours.DayHours = HourToRead;
+				CmdExecuted = true;
+			}
+			else
+			{
+				CmdExecuted = false;
+				WriteResponse("Comando non eseguito");
+				WriteResponse("Ora inserita incorretta");
+			}
+			break;
+		case BT_SET_NIGHT:
+			HourToRead = ReadHour();
+			if(HourToRead < 24)
+			{
+				DayTimeHours.NightHours = HourToRead;
+				CmdExecuted = true;
+			}
+			else
+			{
+				CmdExecuted = false;
+				WriteResponse("Comando non eseguito");
+				WriteResponse("Ora inserita incorretta");
+			}
+			break;
+		case BT_SET_MIDHOUR:
+			HourToRead = ReadHour();
+			if(HourToRead < 24)
+			{
+				DayTimeHours.TransitionHours = HourToRead;
+				CmdExecuted = true;
+			}
+			else
+			{
+				CmdExecuted = false;
+				WriteResponse("Comando non eseguito");
+				WriteResponse("Ora inserita incorretta");
+			}
+			break;
+		default:	
+			break;
+	}	
+	return CmdExecuted;
+} 
 
 
 void TaskBT(void *pvParameters)  // This is a task.
@@ -45,7 +125,7 @@ void TaskBT(void *pvParameters)  // This is a task.
 	bool CmdExecuted = false, CommandFound = false;
 	String Command = "";
 	uint8_t CmdRspIndex = 0;
-	uint8_t HourToRead = 0;
+	
 	for(;;)
 	{
 		IsBTActive();
@@ -59,55 +139,7 @@ void TaskBT(void *pvParameters)  // This is a task.
 					if(Command == PossibleCommandsResponse[CmdRspIndex].Command)
 					{
 						CommandFound = true;
-						switch(PossibleCommandsResponse[CmdRspIndex].CmdRspValue)
-						{
-							case BT_PUMP_ON:
-								SystemFlag.BypassNormalLcd = true;
-								SystemFlag.BypassIgrosensorBT = true;
-								SystemFlag.ManualPumpState = PUMP_ON;
-								CmdExecuted = true;
-								break;
-							case BT_PUMP_OFF:
-								SystemFlag.BypassNormalLcd = true;
-								SystemFlag.BypassIgrosensorBT = true;
-								SystemFlag.ManualPumpState = PUMP_OFF;
-								CmdExecuted = true;
-								break;
-							case BT_LED_ON:
-								SystemFlag.BypassNormalLcd = true;
-								SystemFlag.BypassNormalDimming = true;
-								Dimming = 255;
-								SystemFlag.RefreshDimming = true;
-								CmdExecuted = true;
-								break;
-							case BT_LED_OFF:
-								SystemFlag.BypassNormalLcd = true;
-								SystemFlag.BypassNormalDimming = true;
-								Dimming = 0;
-								SystemFlag.RefreshDimming = true;
-								CmdExecuted = true;
-								break;
-							case BT_SET_DAY:
-								HourToRead = ReadHour();
-								if(HourToRead < 24)
-								{
-									DayTimeHours.DayHours = HourToRead;
-									CmdExecuted = true;
-								}
-								else
-								{
-									CmdExecuted = false;
-									WriteResponse("Comando non eseguito");
-									WriteResponse("Ora inserita incorretta");
-								}
-								break;
-							case BT_SET_NIGHT:
-								break;
-							case BT_SET_MIDHOUR:
-								break;
-							default:	
-								break;
-						}
+						CmdExecuted = ExecuteCommand(PossibleCommandsResponse[CmdRspIndex].CmdRspValue);
 						if(CmdExecuted)
 						{
 							WriteResponse(PossibleCommandsResponse[CmdRspIndex].Response);

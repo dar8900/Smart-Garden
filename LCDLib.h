@@ -62,7 +62,7 @@ void ClearLCDLine(short row);
 void LCDDisplayLight(bool IsOn);
 void LCDBlink(bool IsBlinking);
 bool LCDCreateIcon(short Icon[], short IconNum);
-void LCDShowIcon(short IconNum);
+void LCDShowIcon(short IconNum, short Row, short Col);
 void ScrollText(String Text, short Where, short DelayMs, short ScreenPos);
 void LCDPrintMessage(String Message, short Row);
 #endif

@@ -159,8 +159,9 @@ bool LCDCreateIcon(short Icon[], short IconNum)
 	return Created;
 }
 
-void LCDShowIcon(short IconNum)
+void LCDShowIcon(short IconNum, short Row, short Col)
 {
+	lcd_main.setCursor(Col, Row);
 	lcd_main.write(IconNum);
 }
 

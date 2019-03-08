@@ -8,6 +8,14 @@
 
 #define REGULAR_SCREEN_REFRESH_DELAY 	40
 
+#define ICONS_ROW				ONE
+#define BT_ICON_COL				 8
+#define WHICH_HOUR_ICON_COL		10
+#define PUMP_ICON_COL			12
+#define SD_LOG_ICON_COL			14
+
+
+
 #ifdef TASK_LCD
 void TaskLCD(void *pvParameters)  // This is a task.
 {
@@ -40,6 +48,7 @@ void TaskLCD(void *pvParameters)  // This is a task.
 	};
 	bool RegularScreen = true, SetHour = false, SetPump = false, SetTime = false;
 	bool SetHourDay = true, SetHourTransition = false, SetHourNight = false;
+	bool ClearLCDBT = false;
 	uint8_t ActualTime = 0;
 	uint8_t Hours = 0, TotDayHours = 24;
 	uint8_t RegularScreenCnt = 0;
@@ -50,10 +59,30 @@ void TaskLCD(void *pvParameters)  // This is a task.
 	{
 		if(!SystemFlag.BypassNormalLcd)
 		{
+			if(!ClearLCDBT)
+			{
+				ClearLCD();
+				ClearLCDBT = true;
+			}
 			if(RegularScreen)
 			{
 				if(RegularScreenCnt < REGULAR_SCREEN_REFRESH_DELAY)
 				{
+					switch(SystemFlag.DayTime)
+					{
+						case IN_DAY:
+							LCDShowIcon(SUN_ICON, ICONS_ROW, WHICH_HOUR_ICON_COL);
+							break;
+						case IN_NIGHT:
+							LCDShowIcon(MOON_ICON, ICONS_ROW, WHICH_HOUR_ICON_COL);
+							break;
+						case TO_DAY:
+						case TO_NIGHT:
+							LCDShowIcon(MIDHOURS_ICON, ICONS_ROW, WHICH_HOUR_ICON_COL);
+							break;
+						default:
+							break;
+					}					
 					LCDPrintString(THREE, LEFT_ALIGN, String(TimePeriod[SystemFlag.DayTime]));
 					LCDPrintString(FOUR, LEFT_ALIGN, String(PumpState[SystemFlag.ManualPumpState]));
 				}
@@ -108,11 +137,23 @@ void TaskLCD(void *pvParameters)  // This is a task.
 					RegularScreenCnt = 0;
 					ClearLCD();
 				}
+				if(SystemFlag.BTActive)
+					LCDShowIcon(BT_ICON, ICONS_ROW, BT_ICON_COL);
+				else
+					ClearChar(ICONS_ROW, BT_ICON_COL);
+				if(SystemFlag.SDLogging)
+					LCDShowIcon(SD_ICON, ICONS_ROW, SD_LOG_ICON_COL);
+				else
+					ClearChar(ICONS_ROW, SD_LOG_ICON_COL);
 			}
 			else if(SetPump)
 			{
 				SystemFlag.BypassIgrosensor = true;
-				LCDPrintString(ONE, LEFT_ALIGN, String(PumpState[SystemFlag.ManualPumpState]));
+				LCDPrintString(TWO, LEFT_ALIGN, String(PumpState[SystemFlag.ManualPumpState]));
+				if(SystemFlag.ManualPumpState == PUMP_ON)
+					LCDShowIcon(PUMP_ICON, ICONS_ROW, PUMP_ICON_COL);
+				else
+					ClearChar(ICONS_ROW, PUMP_ICON_COL);
 				switch(ButtonPress)
 				{
 					case UP:
@@ -120,14 +161,14 @@ void TaskLCD(void *pvParameters)  // This is a task.
 							SystemFlag.ManualPumpState = PUMP_OFF;
 						else
 							SystemFlag.ManualPumpState = PUMP_ON;
-						ClearLCDLine(ONE);
+						ClearLCDLine(TWO);
 						break;
 					case DOWN:
 						if(SystemFlag.ManualPumpState == PUMP_ON)
 							SystemFlag.ManualPumpState = PUMP_OFF;
 						else
 							SystemFlag.ManualPumpState = PUMP_ON;
-						ClearLCDLine(ONE);
+						ClearLCDLine(TWO);
 						break;
 					case OK:
 						SetPump = false;
@@ -274,7 +315,23 @@ void TaskLCD(void *pvParameters)  // This is a task.
 		}
 		else
 		{
-			
+			if(ClearLCDBT)
+			{
+				ClearLCD();
+				ClearLCDBT = false;
+			}
+			LCDShowIcon(BT_ICON, ICONS_ROW, BT_ICON_COL);
+			if(SystemFlag.ManualPumpState == PUMP_ON)
+				LCDShowIcon(PUMP_ICON, ICONS_ROW, PUMP_ICON_COL);
+			else
+				ClearChar(ICONS_ROW, PUMP_ICON_COL);
+			if(Dimming == 255)
+				LCDShowIcon(SUN_ICON, ICONS_ROW, WHICH_HOUR_ICON_COL);
+			else
+				ClearChar(ICONS_ROW, WHICH_HOUR_ICON_COL);
+				
+			LCDPrintString(TWO, CENTER_ALIGN, "Dispositivo BT");
+			LCDPrintString(THREE, CENTER_ALIGN, "connesso");
 		}
 		OsDelay(250);
 	}
