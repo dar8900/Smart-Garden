@@ -18,10 +18,10 @@
 #define TASK_BT
 
 
-#define TASK_DIMMING_DELAY			    	500	          
+#define TASK_DIMMING_DELAY			       1000	          
 #define TASK_TIME_DELAY				    	100
-#define TASK_IGROSENSORPUMP_DELAY	    	 50	
-#define TASK_LCD_DELAY				    	250
+#define TASK_IGROSENSORPUMP_DELAY	    	250	
+#define TASK_LCD_DELAY				    	500
 #define TASK_KEYBOARD_DELAY			    	 25
 #define TASK_EEPROM_DELAY	               1000
 #define TASK_SD_DELAY			           2500	
