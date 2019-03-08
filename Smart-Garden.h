@@ -3,10 +3,11 @@
 #include <stdint.h>
 #include <Arduino_FreeRTOS.h>
 #include <EEPROM.h>
+#include <avr/pgmspace.h>
 #include "EepromAddr.h"
 #include "TaskSelection.h"
 
-#define OsDelay(ms)  vTaskDelay( ms / portTICK_PERIOD_MS ); // wait for one second
+#define OsDelay(ms)  vTaskDelay( ms / portTICK_PERIOD_MS ); // wait for ms second
 
 typedef struct 
 {

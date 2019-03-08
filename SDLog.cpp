@@ -6,7 +6,7 @@
 #include "Time.h"
 
 #define CS_PIN 	53
-#define LOG_PERIOD_SD		60    // In secondi
+
 
 #define LOG_FILE_NAME	"IgroValues "
 

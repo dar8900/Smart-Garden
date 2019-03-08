@@ -10,7 +10,7 @@ void TaskSD(void *pvParameters)  // This is a task.
 	for(;;)
 	{
 		LogToSD();
-		OsDelay(1000);
+		OsDelay(TASK_SD_DELAY);
 	}
 }
 

@@ -18,7 +18,7 @@ void TaskIgroSensorPump(void *pvParameters)  // This is a task.
 		{
 			PumpAction(SystemFlag.ManualPumpState);
 		}
-		OsDelay(50);
+		OsDelay(TASK_IGROSENSORPUMP_DELAY);
 	}
 }
 #endif

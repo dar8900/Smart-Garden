@@ -10,7 +10,7 @@ void TaskKeyboard(void *pvParameters)  // This is a task.
 	for (;;)
 	{
 		CheckButtons();
-		OsDelay(25);
+		OsDelay(TASK_KEYBOARD_DELAY);
 	}
 }
 #endif

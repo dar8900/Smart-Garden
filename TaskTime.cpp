@@ -10,7 +10,7 @@ void TaskTime(void *pvParameters)  // This is a task.
 	for (;;)
 	{
 		CheckTime();
-		OsDelay(100);
+		OsDelay(TASK_TIME_DELAY);
 	}
 }
 #endif

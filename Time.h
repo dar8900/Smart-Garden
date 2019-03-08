@@ -2,6 +2,8 @@
 #define TIME_H
 #include <Arduino.h>
 
+#define SEC_TO_MILLIS(s)	   (s * 1000)
+
 #define SECOND_IN_MINUTE 			   60
 #define SECOND_IN_HOUR				 3600
 #define SECOND_IN_24H				86400
@@ -21,6 +23,8 @@
 #define DFLT_DAY				   28
 #define DFLT_MONTH					5  // uno in meno per il vettore dei giorni
 #define DFLT_YEAR				 2019
+
+#define LOG_PERIOD_SD		60    // In secondi
 
 typedef struct
 {

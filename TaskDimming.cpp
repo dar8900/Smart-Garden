@@ -58,7 +58,7 @@ void TaskDimmingLed(void *pvParameters)  // This is a task.
 				SystemFlag.RefreshDimming = false;
 			}
 		}
-		OsDelay(500);
+		OsDelay(TASK_DIMMING_DELAY);
 	}
 }
 #endif

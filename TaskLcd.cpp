@@ -333,7 +333,7 @@ void TaskLCD(void *pvParameters)  // This is a task.
 			LCDPrintString(TWO, CENTER_ALIGN, "Dispositivo BT");
 			LCDPrintString(THREE, CENTER_ALIGN, "connesso");
 		}
-		OsDelay(250);
+		OsDelay(TASK_LCD_DELAY);
 	}
 }
 #endif

@@ -125,35 +125,49 @@ void TaskBT(void *pvParameters)  // This is a task.
 	bool CmdExecuted = false, CommandFound = false;
 	String Command = "";
 	uint8_t CmdRspIndex = 0;
+	uint16_t ShowCmdListCnt = (SEC_TO_MILLIS(10)/TASK_BT_DELAY);
 	
 	for(;;)
 	{
 		IsBTActive();
 		if(SystemFlag.BTActive)
 		{
-			Command = ReadCommand();
-			if(Command != "")
+			if(ShowCmdListCnt == (SEC_TO_MILLIS(10)/TASK_BT_DELAY))
 			{
+				ShowCmdListCnt = 0;
+				WriteResponse("Lista comandi:");
 				for(CmdRspIndex = 0; CmdRspIndex < MAX_CMD_RSP_VALUES; CmdRspIndex++)
 				{
-					if(Command == PossibleCommandsResponse[CmdRspIndex].Command)
-					{
-						CommandFound = true;
-						CmdExecuted = ExecuteCommand(PossibleCommandsResponse[CmdRspIndex].CmdRspValue);
-						if(CmdExecuted)
-						{
-							WriteResponse(PossibleCommandsResponse[CmdRspIndex].Response);
-							CmdExecuted = false;
-						}
-						break;
-					}
+					WriteResponse(PossibleCommandsResponse[CmdRspIndex].Command);
+					OsDelay(50);
 				}
-				if(CommandFound)
-					CommandFound = false;
-				else
-					WriteResponse("Comando non trovato");
 			}
-			
+			else
+			{
+				Command = ReadCommand();
+				if(Command != "")
+				{
+					for(CmdRspIndex = 0; CmdRspIndex < MAX_CMD_RSP_VALUES; CmdRspIndex++)
+					{
+						if(Command == PossibleCommandsResponse[CmdRspIndex].Command)
+						{
+							CommandFound = true;
+							CmdExecuted = ExecuteCommand(PossibleCommandsResponse[CmdRspIndex].CmdRspValue);
+							if(CmdExecuted)
+							{
+								WriteResponse(PossibleCommandsResponse[CmdRspIndex].Response);
+								CmdExecuted = false;
+							}
+							break;
+						}
+					}
+					if(CommandFound)
+						CommandFound = false;
+					else
+						WriteResponse("Comando non trovato");
+				}
+			}
+			ShowCmdListCnt++;
 		}
 		else
 		{
@@ -161,7 +175,7 @@ void TaskBT(void *pvParameters)  // This is a task.
 			SystemFlag.BypassNormalDimming = false;		
 			SystemFlag.BypassIgrosensorBT = false;			
 		}
-		OsDelay(200);
+		OsDelay(TASK_BT_DELAY);
 	}
 }
 

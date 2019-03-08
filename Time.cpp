@@ -88,7 +88,7 @@ void CheckTime()
 		SecondCounter++;
 		CounterToLog++;
 		TimeDateCounterForSave++;
-		if(SystemFlag.SDInitialize)
+		if(SystemFlag.SDInitialize && LogToSDPeriod < LOG_PERIOD_SD)
 			LogToSDPeriod++;
 	}
 	switch(SystemFlag.DayTime)

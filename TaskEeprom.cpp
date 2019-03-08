@@ -36,7 +36,7 @@ void TaskEeprom(void *pvParameters)  // This is a task.
 			FlagForSave.SaveCalendar = false;
 			SaveTimeDate();
 		}
-		OsDelay(1000);
+		OsDelay(TASK_EEPROM_DELAY);
 	}
 }
 #endif

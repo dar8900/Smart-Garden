@@ -17,9 +17,9 @@ void OSInit()
 	xTaskCreate(
 	TaskDimmingLed
 	,  (const portCHAR *) "DimmingLed"
-	,  64  // Stack size
+	,  TASK_DIMMING_HEAP  // Stack size
 	,  NULL
-	,  1  // Priority
+	,  TASK_DIMMING_PRIORITY  // Priority
 	,  NULL );
 #endif
 
@@ -27,9 +27,9 @@ void OSInit()
 	xTaskCreate(
 	TaskTime
 	,  (const portCHAR *) "Time"
-	,  64  // Stack size
+	,  TASK_TIME_HEAP  // Stack size
 	,  NULL
-	,  3  // Priority
+	,  TASK_TIME_PRIORITY  // Priority
 	,  NULL );
 #endif
 
@@ -37,9 +37,9 @@ void OSInit()
 	xTaskCreate(
 	TaskIgroSensorPump
 	,  (const portCHAR *) "IgroSensorPump"
-	,  64  // Stack size
+	,  TASK_IGROSENSORPUMP_HEAP  // Stack size
 	,  NULL
-	,  2  // Priority
+	,  TASK_IGROSENSORPUMP_PRIORITY  // Priority
 	,  NULL );
 #endif
 
@@ -47,9 +47,9 @@ void OSInit()
 	xTaskCreate(
 	TaskLCD
 	,  (const portCHAR *) "LCD"
-	,  128 // Stack size
+	,  TASK_LCD_HEAP // Stack size
 	,  NULL
-	,  1  // Priority
+	,  TASK_LCD_PRIORITY  // Priority
 	,  NULL );
 #endif
 
@@ -57,9 +57,9 @@ void OSInit()
 	xTaskCreate(
 	TaskKeyboard
 	,  (const portCHAR *) "Keyboard"
-	,  64  // Stack size
+	,  TASK_KEYBOARD_HEAP  // Stack size
 	,  NULL
-	,  3  // Priority
+	,  TASK_KEYBOARD_PRIORITY  // Priority
 	,  NULL );
 #endif
 
@@ -67,9 +67,9 @@ void OSInit()
 	xTaskCreate(
 	TaskEeprom
 	,  (const portCHAR *) "Eeprom"
-	,  64  // Stack size
+	,  TASK_EEPROM_HEAP  // Stack size
 	,  NULL
-	,  0 // Priority
+	,  TASK_EEPROM_PRIORITY // Priority
 	,  NULL );
 #endif
 
@@ -77,9 +77,9 @@ void OSInit()
 	xTaskCreate(
 	TaskSD
 	,  (const portCHAR *) "SD"
-	,  64  // Stack size
+	,  TASK_SD_HEAP  // Stack size
 	,  NULL
-	,  2 // Priority
+	,  TASK_SD_PRIORITY // Priority
 	,  NULL );
 #endif
 
@@ -87,9 +87,9 @@ void OSInit()
 	xTaskCreate(
 	TaskBT
 	,  (const portCHAR *) "BT"
-	,  64  // Stack size
+	,  TASK_BT_HEAP  // Stack size
 	,  NULL
-	,  3 // Priority
+	,  TASK_BT_PRIORITY // Priority
 	,  NULL );
 #endif
 }
