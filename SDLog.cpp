@@ -10,6 +10,8 @@
 
 #define LOG_FILE_NAME	"IgroValues "
 
+#ifdef TASK_SD
+
 File LogFile;
 
 void SDBegin()
@@ -54,3 +56,4 @@ void LogToSD()
 		SystemFlag.SDLogging = false;
 	}
 }
+#endif

@@ -8,7 +8,7 @@
 #include "TaskTime.h"
 #include "TaskDimming.h"
 #include "TaskBT.h"
-
+#include "TaskEth.h"
 
 void OSInit()
 {
@@ -17,7 +17,7 @@ void OSInit()
 	xTaskCreate(
 	TaskDimmingLed
 	,  (const portCHAR *) "DimmingLed"
-	,  TASK_DIMMING_HEAP  // Stack size
+	,  TASK_DIMMING_STACK  // Stack size
 	,  NULL
 	,  TASK_DIMMING_PRIORITY  // Priority
 	,  NULL );
@@ -27,7 +27,7 @@ void OSInit()
 	xTaskCreate(
 	TaskTime
 	,  (const portCHAR *) "Time"
-	,  TASK_TIME_HEAP  // Stack size
+	,  TASK_TIME_STACK  // Stack size
 	,  NULL
 	,  TASK_TIME_PRIORITY  // Priority
 	,  NULL );
@@ -37,7 +37,7 @@ void OSInit()
 	xTaskCreate(
 	TaskIgroSensorPump
 	,  (const portCHAR *) "IgroSensorPump"
-	,  TASK_IGROSENSORPUMP_HEAP  // Stack size
+	,  TASK_IGROSENSORPUMP_STACK  // Stack size
 	,  NULL
 	,  TASK_IGROSENSORPUMP_PRIORITY  // Priority
 	,  NULL );
@@ -47,7 +47,7 @@ void OSInit()
 	xTaskCreate(
 	TaskLCD
 	,  (const portCHAR *) "LCD"
-	,  TASK_LCD_HEAP // Stack size
+	,  TASK_LCD_STACK // Stack size
 	,  NULL
 	,  TASK_LCD_PRIORITY  // Priority
 	,  NULL );
@@ -57,7 +57,7 @@ void OSInit()
 	xTaskCreate(
 	TaskKeyboard
 	,  (const portCHAR *) "Keyboard"
-	,  TASK_KEYBOARD_HEAP  // Stack size
+	,  TASK_KEYBOARD_STACK  // Stack size
 	,  NULL
 	,  TASK_KEYBOARD_PRIORITY  // Priority
 	,  NULL );
@@ -67,7 +67,7 @@ void OSInit()
 	xTaskCreate(
 	TaskEeprom
 	,  (const portCHAR *) "Eeprom"
-	,  TASK_EEPROM_HEAP  // Stack size
+	,  TASK_EEPROM_STACK  // Stack size
 	,  NULL
 	,  TASK_EEPROM_PRIORITY // Priority
 	,  NULL );
@@ -77,7 +77,7 @@ void OSInit()
 	xTaskCreate(
 	TaskSD
 	,  (const portCHAR *) "SD"
-	,  TASK_SD_HEAP  // Stack size
+	,  TASK_SD_STACK  // Stack size
 	,  NULL
 	,  TASK_SD_PRIORITY // Priority
 	,  NULL );
@@ -87,9 +87,20 @@ void OSInit()
 	xTaskCreate(
 	TaskBT
 	,  (const portCHAR *) "BT"
-	,  TASK_BT_HEAP  // Stack size
+	,  TASK_BT_STACK  // Stack size
 	,  NULL
 	,  TASK_BT_PRIORITY // Priority
 	,  NULL );
 #endif
+
+#ifdef TASK_ETH
+	xTaskCreate(
+	TaskEth
+	,  (const portCHAR *) "ETH"
+	,  TASK_ETH_STACK  // Stack size
+	,  NULL
+	,  TASK_ETH_PRIORITY // Priority
+	,  NULL );
+#endif
+
 }

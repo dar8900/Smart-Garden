@@ -27,7 +27,7 @@ static void InitSystem()
 	pinMode(DOWN_BUTTON, INPUT);
 	pinMode(OK_BUTTON, INPUT);
 	pinMode(BT_LED_ACTIVE, INPUT);
-	
+	pinMode(ETH_CS, OUTPUT);
 	SystemFlag.DayTime = EEPROM.read(DAY_TIME_ADDR);
 	
 	// Se è il primo avvio

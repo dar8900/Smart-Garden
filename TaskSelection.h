@@ -13,10 +13,11 @@
 
 #define TASK_EEPROM
 
-#define TASK_SD
+#undef TASK_SD
 
 #define TASK_BT
 
+#define TASK_ETH
 
 #define TASK_DIMMING_DELAY			       1000	          
 #define TASK_TIME_DELAY				    	100
@@ -26,16 +27,21 @@
 #define TASK_EEPROM_DELAY	               1000
 #define TASK_SD_DELAY			           2500	
 #define TASK_BT_DELAY				    	200
+#define TASK_ETH_DELAY						250
 
 
-#define TASK_DIMMING_HEAP			    	 64	          
-#define TASK_TIME_HEAP				    	 64
-#define TASK_IGROSENSORPUMP_HEAP	    	 64	
-#define TASK_LCD_HEAP				    	128
-#define TASK_KEYBOARD_HEAP			    	 64
-#define TASK_EEPROM_HEAP	                 64
-#define TASK_SD_HEAP			             64	
-#define TASK_BT_HEAP				    	 64
+/* STACK IN UINT16_T = 2 bytes */
+
+#define TASK_DIMMING_STACK			    	192	          
+#define TASK_TIME_STACK				    	192
+#define TASK_IGROSENSORPUMP_STACK	    	192	
+#define TASK_LCD_STACK				    	192
+#define TASK_KEYBOARD_STACK			    	192
+#define TASK_EEPROM_STACK	                192
+#define TASK_SD_STACK			            192	
+#define TASK_BT_STACK				    	192
+#define TASK_ETH_STACK						192
+										// 3456 bytes = 42% della RAM
 
 
 #define TASK_DIMMING_PRIORITY				  1	          
@@ -46,5 +52,6 @@
 #define TASK_EEPROM_PRIORITY	              0
 #define TASK_SD_PRIORITY			          0
 #define TASK_BT_PRIORITY					  3
+#define TASK_ETH_PRIORITY					  2
 
 #endif

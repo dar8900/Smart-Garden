@@ -141,10 +141,12 @@ void TaskLCD(void *pvParameters)  // This is a task.
 					LCDShowIcon(BT_ICON, ICONS_ROW, BT_ICON_COL);
 				else
 					ClearChar(ICONS_ROW, BT_ICON_COL);
+#ifdef TASK_SD
 				if(SystemFlag.SDLogging)
 					LCDShowIcon(SD_ICON, ICONS_ROW, SD_LOG_ICON_COL);
 				else
 					ClearChar(ICONS_ROW, SD_LOG_ICON_COL);
+#endif
 			}
 			else if(SetPump)
 			{

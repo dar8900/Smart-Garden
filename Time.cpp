@@ -53,27 +53,27 @@ static void RefreshCalendar(CALENDAR_VAR *TimeToRefresh)
 	{
 		CalendarSecond = 0;
 		TimeToRefresh->Minute++;
-		if(TimeToRefresh->Minute == 60)
-		{
-			TimeToRefresh->Hour++;
-			TimeToRefresh->Minute = 0;
-			if(TimeToRefresh->Hour == 24)
-			{
-				TimeToRefresh->Day++;
-				TimeToRefresh->Hour = 0;
-				if(TimeToRefresh->Day == (DayForMonth[TimeToRefresh->Month] + 1))
-				{
-					TimeToRefresh->Month++;
-					TimeToRefresh->Day = 0;
-					if(TimeToRefresh->Month == 12)
-					{
-						TimeToRefresh->Year++;
-						TimeToRefresh->Month = 0;
-					}
-				}
-			}
-		}			
 	}
+	if(TimeToRefresh->Minute == 60)
+	{
+		TimeToRefresh->Hour++;
+		TimeToRefresh->Minute = 0;
+	}
+	if(TimeToRefresh->Hour == 24)
+	{
+		TimeToRefresh->Day++;
+		TimeToRefresh->Hour = 0;
+	}
+	if(TimeToRefresh->Day == (DayForMonth[TimeToRefresh->Month] + 1))
+	{
+		TimeToRefresh->Month++;
+		TimeToRefresh->Day = 0;
+	}
+	if(TimeToRefresh->Month == 12)
+	{
+		TimeToRefresh->Year++;
+		TimeToRefresh->Month = 0;
+	}		
 }
 
 
@@ -88,8 +88,10 @@ void CheckTime()
 		SecondCounter++;
 		CounterToLog++;
 		TimeDateCounterForSave++;
+#ifdef TASK_SD
 		if(SystemFlag.SDInitialize && LogToSDPeriod < LOG_PERIOD_SD)
 			LogToSDPeriod++;
+#endif
 	}
 	switch(SystemFlag.DayTime)
 	{

@@ -6,11 +6,11 @@
 void TaskTime(void *pvParameters)  // This is a task.
 {
 	(void) pvParameters;
-
+	uint16_t LastTaskWakeTime = xTaskGetTickCount();
 	for (;;)
 	{
+		OsDelayUntill(&LastTaskWakeTime, TASK_TIME_DELAY);
 		CheckTime();
-		OsDelay(TASK_TIME_DELAY);
 	}
 }
 #endif
