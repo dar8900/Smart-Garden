@@ -3,12 +3,12 @@
 #include "TaskLcd.h"
 #include "TaskKeyboard.h"
 #include "TaskEeprom.h"
-#include "TaskSD.h"
+#include "TaskEth-SD.h"
 #include "TaskIgroPump.h"
 #include "TaskTime.h"
 #include "TaskDimming.h"
 #include "TaskBT.h"
-#include "TaskEth.h"
+// #include "TaskEth.h"
 
 void OSInit()
 {
@@ -73,13 +73,13 @@ void OSInit()
 	,  NULL );
 #endif
 
-#ifdef TASK_SD	
+#ifdef TASK_ETH_SD	
 	xTaskCreate(
-	TaskSD
+	TaskEthSD
 	,  (const portCHAR *) "SD"
-	,  TASK_SD_STACK  // Stack size
+	,  TASK_ETH_SD_STACK  // Stack size
 	,  NULL
-	,  TASK_SD_PRIORITY // Priority
+	,  TASK_ETH_SD_PRIORITY // Priority
 	,  NULL );
 #endif
 
@@ -93,14 +93,14 @@ void OSInit()
 	,  NULL );
 #endif
 
-#ifdef TASK_ETH
-	xTaskCreate(
-	TaskEth
-	,  (const portCHAR *) "ETH"
-	,  TASK_ETH_STACK  // Stack size
-	,  NULL
-	,  TASK_ETH_PRIORITY // Priority
-	,  NULL );
-#endif
+// #ifdef TASK_ETH
+	// xTaskCreate(
+	// TaskEth
+	// ,  (const portCHAR *) "ETH"
+	// ,  TASK_ETH_STACK  // Stack size
+	// ,  NULL
+	// ,  TASK_ETH_PRIORITY // Priority
+	// ,  NULL );
+// #endif
 
 }

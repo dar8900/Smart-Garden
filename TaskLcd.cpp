@@ -9,6 +9,7 @@
 #define REGULAR_SCREEN_REFRESH_DELAY 	40
 
 #define ICONS_ROW				ONE
+#define ETH_ICON_COL			 6
 #define BT_ICON_COL				 8
 #define WHICH_HOUR_ICON_COL		10
 #define PUMP_ICON_COL			12
@@ -75,11 +76,6 @@ void TaskLCD(void *pvParameters)  // This is a task.
 							break;
 						case IN_NIGHT:
 							LCDShowIcon(MOON_ICON, ICONS_ROW, WHICH_HOUR_ICON_COL);
-							break;
-						case TO_DAY:
-						case TO_NIGHT:
-							LCDShowIcon(MIDHOURS_ICON, ICONS_ROW, WHICH_HOUR_ICON_COL);
-							break;
 						default:
 							break;
 					}					
@@ -137,16 +133,18 @@ void TaskLCD(void *pvParameters)  // This is a task.
 					RegularScreenCnt = 0;
 					ClearLCD();
 				}
+				if(SystemFlag.EthCableConnected)
+					LCDShowIcon(ETH_ICON, ICONS_ROW, ETH_ICON_COL);
+				else
+					ClearChar(ICONS_ROW, ETH_ICON_COL);
 				if(SystemFlag.BTActive)
 					LCDShowIcon(BT_ICON, ICONS_ROW, BT_ICON_COL);
 				else
 					ClearChar(ICONS_ROW, BT_ICON_COL);
-#ifdef TASK_SD
 				if(SystemFlag.SDLogging)
 					LCDShowIcon(SD_ICON, ICONS_ROW, SD_LOG_ICON_COL);
 				else
 					ClearChar(ICONS_ROW, SD_LOG_ICON_COL);
-#endif
 			}
 			else if(SetPump)
 			{

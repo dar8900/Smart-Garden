@@ -18,17 +18,21 @@ typedef struct
 	bool RefreshDimming;
 	bool SettingHours;
 	bool BypassIgrosensor;
-#ifdef TASK_SD
+#ifdef TASK_ETH_SD
 	bool SDInitialize;
 	bool SDLogging;
+	bool SDWebPagePresent;
+	bool EthCableConnected;
+	bool EthClient;
 #endif
 	bool BTActive;
 	bool BypassNormalLcd;
 	bool BypassNormalDimming;
 	bool BypassIgrosensorBT;
-#ifdef TASK_ETH
-	bool SwitchToSD;
-#endif
+// #ifdef TASK_ETH
+	// bool CableConnected;
+	// bool EthClient;
+// #endif
 }GENERAL_FLAG;
 
 typedef enum
@@ -39,6 +43,7 @@ typedef enum
 	DOWN_BUTTON 	= 7,
 	OK_BUTTON   	= 8,
 	BT_LED_ACTIVE   = 10,
+	SD_CS			= 53,
 	ETH_CS          = 49
 }PINS;
 
@@ -46,9 +51,9 @@ typedef enum
 {
 	BT_ICON = 0,
 	SD_ICON,
+	ETH_ICON,
 	SUN_ICON,
 	MOON_ICON,
-	MIDHOURS_ICON,
 	PUMP_ICON,
 	MAX_ICON
 }ICONS;

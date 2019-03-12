@@ -1,28 +1,35 @@
 #include <SPI.h>
 #include <SD.h>
+#include <Ethernet.h>
 #include "Smart-Garden.h"
 #include "SDLog.h"
 #include "IgroSensor.h"
 #include "Time.h"
 
-#define CS_PIN 	53
-
 
 #define LOG_FILE_NAME	"IgroValues "
 
-#ifdef TASK_SD
+
+extern EthernetClient GeneralClient;
 
 File LogFile;
+File WebPage;
 
-void SDBegin()
+void SDInit()
 {
 	// see if the card is present and can be initialized:
-	if (!SD.begin(CS_PIN)) 
+	if (!SD.begin(SD_CS)) 
 	{
 		SystemFlag.SDInitialize = false;
 	}
 	else
+	{
 		SystemFlag.SDInitialize = true;	
+		if (!SD.exists("index.htm"))
+			SystemFlag.SDWebPagePresent = false;
+		else
+			SystemFlag.SDWebPagePresent = true;
+	}
 }
 
 void LogToSD()
@@ -56,4 +63,19 @@ void LogToSD()
 		SystemFlag.SDLogging = false;
 	}
 }
-#endif
+
+
+void WriteWebPageToClient()
+{
+	WebPage = SD.open("index.htm");
+	if(WebPage)
+	{
+		while(WebPage.available())
+		{
+			GeneralClient.write(WebPage.read());
+		}
+		WebPage.close();
+	}
+}
+
+

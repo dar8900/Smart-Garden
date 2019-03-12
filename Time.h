@@ -24,7 +24,7 @@
 #define DFLT_MONTH					5  // uno in meno per il vettore dei giorni
 #define DFLT_YEAR				 2019
 
-#define LOG_PERIOD_SD		60    // In secondi
+#define LOG_PERIOD_SD		        SECONDS_MINUTE(5)    // In secondi
 
 typedef struct
 {

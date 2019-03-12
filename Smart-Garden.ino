@@ -27,7 +27,7 @@ static void InitSystem()
 	pinMode(DOWN_BUTTON, INPUT);
 	pinMode(OK_BUTTON, INPUT);
 	pinMode(BT_LED_ACTIVE, INPUT);
-	pinMode(ETH_CS, OUTPUT);
+
 	SystemFlag.DayTime = EEPROM.read(DAY_TIME_ADDR);
 	
 	// Se è il primo avvio
@@ -62,7 +62,7 @@ static void CreateSystemIcons()
 	LCDCreateIcon(SDIcon, SD_ICON);
 	LCDCreateIcon(SunIcon, SUN_ICON);
 	LCDCreateIcon(MoonIcon, MOON_ICON);
-	LCDCreateIcon(MidHoursIcon, MIDHOURS_ICON);
+	LCDCreateIcon(EthIcon, ETH_ICON);
 	LCDCreateIcon(PumpIcon, PUMP_ICON);	
 }
 
