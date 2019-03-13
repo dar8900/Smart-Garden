@@ -20,7 +20,9 @@ FLAG_EEPROM FlagForSave;
 
 static void InitSystem()
 {
+#ifdef DBG_SERIAL
 	Serial.begin(9600);
+#endif	
 	pinMode(DIMMING_LED, OUTPUT);
 	pinMode(PUMP, OUTPUT);
 	pinMode(UP_BUTTON, INPUT);

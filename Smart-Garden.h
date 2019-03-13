@@ -10,6 +10,14 @@
 #define OsDelay(ms)  		vTaskDelay( ms / portTICK_PERIOD_MS ); // wait for ms second
 #define OsDelayUntill(LastWakeTime, ms)   vTaskDelayUntil(LastWakeTime ,(ms / portTICK_PERIOD_MS) ); // wait for ms second
 
+#define DBG_SERIAL	  // Opzione per attivazione debug su seriale
+
+#ifdef DBG_SERIAL
+#define DBG(Str)	Serial.println(Str)
+#else
+#define DBG(Str)
+#endif	
+
 typedef struct 
 {
 	uint8_t DayTime;

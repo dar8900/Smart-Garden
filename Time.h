@@ -62,7 +62,7 @@ extern uint32_t SecondCounter;
 extern uint16_t SecondForDimming;
 extern DAY_TIME_HOURS DayTimeHours;
 extern CALENDAR_VAR TimeDate;
-extern uint8_t DayForMonth[];
+extern const uint8_t DayForMonth[];
 extern uint16_t LogToSDPeriod;
 
 void CheckTime(void);

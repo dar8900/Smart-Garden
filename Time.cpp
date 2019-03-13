@@ -14,7 +14,7 @@ DAY_TIME_HOURS DayTimeHours;
 CALENDAR_VAR TimeDate;
 uint16_t LogToSDPeriod;
 
-uint8_t DayForMonth[12]
+const uint8_t DayForMonth[12]
 {
 	31,
 	28,
@@ -88,7 +88,7 @@ void CheckTime()
 		SecondCounter++;
 		CounterToLog++;
 		TimeDateCounterForSave++;
-#ifdef TASK_SD
+#ifdef TASK_ETH_SD
 		if(SystemFlag.SDInitialize && LogToSDPeriod < LOG_PERIOD_SD)
 			LogToSDPeriod++;
 #endif

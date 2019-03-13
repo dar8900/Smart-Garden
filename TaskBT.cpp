@@ -41,6 +41,7 @@ static bool ExecuteCommand(uint8_t CmdValue)
 {
 	bool CmdExecuted = false;
 	uint8_t HourToRead = 0;
+	DBG("Task BT: comando da eseguire" + String(CmdValue));
 	switch(CmdValue)
 	{
 		case BT_PUMP_ON:
@@ -132,6 +133,7 @@ void TaskBT(void *pvParameters)  // This is a task.
 		IsBTActive();
 		if(SystemFlag.BTActive)
 		{
+			DBG("Task BT: dispositivo connesso");
 			if(ShowCmdListCnt == (SEC_TO_MILLIS(10)/TASK_BT_DELAY))
 			{
 				ShowCmdListCnt = 0;
@@ -147,6 +149,7 @@ void TaskBT(void *pvParameters)  // This is a task.
 				Command = ReadCommand();
 				if(Command != "")
 				{
+					DBG("Task BT: comando letto:" + Command);
 					for(CmdRspIndex = 0; CmdRspIndex < MAX_CMD_RSP_VALUES; CmdRspIndex++)
 					{
 						if(Command == PossibleCommandsResponse[CmdRspIndex].Command)

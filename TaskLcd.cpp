@@ -15,47 +15,51 @@
 #define PUMP_ICON_COL			12
 #define SD_LOG_ICON_COL			14
 
+const char *TimePeriod[MAX_DAY_TIME] = 
+{
+	"Giorno",
+	"Sera",
+	"Notte",
+	"Mattino",
+};
 
+const char *SetTimePeriod[3] = 
+{
+	"Luce",
+	"Buio",
+	"Mezzo",
+};
+
+const char *PumpState[MAX_PUMP_STATE] = 
+{
+	"Pompa spenta",
+	"Pompa accesa",
+};
+
+const char *TimeDateStr[] = 
+{
+	"Ore",
+	"Minuti",
+	"Mese",
+	"Giorno",
+	"Anno",
+};
 
 #ifdef TASK_LCD
 void TaskLCD(void *pvParameters)  // This is a task.
 {
 	(void) pvParameters;
-	char *TimePeriod[MAX_DAY_TIME] = 
-	{
-		"Giorno",
-		"Sera",
-		"Notte",
-		"Mattino",
-	};
-	char *SetTimePeriod[3] = 
-	{
-		"Luce",
-		"Buio",
-		"Mezzo",
-	};
-	char *PumpState[MAX_PUMP_STATE] = 
-	{
-		"Pompa spenta",
-		"Pompa accesa",
-	};
-	char *TimeDateStr[] = 
-	{
-		"Ore",
-		"Minuti",
-		"Mese",
-		"Giorno",
-		"Anno",
-	};
 	bool RegularScreen = true, SetHour = false, SetPump = false, SetTime = false;
 	bool SetHourDay = true, SetHourTransition = false, SetHourNight = false;
 	bool ClearLCDBT = false;
+	bool ToggleEthIcon = false;
 	uint8_t ActualTime = 0;
 	uint8_t Hours = 0, TotDayHours = 24;
 	uint8_t RegularScreenCnt = 0;
 	uint8_t TimeDateValue[5] = {0, 0, 0, 1, 19}; 
 	uint8_t MaxTimeSetValue = 23, MinTimeSetValue = 0;
 	uint8_t WichTimeStrValues = 0;
+	uint16_t LastTaskWakeTime = xTaskGetTickCount();
 	for (;;)
 	{
 		if(!SystemFlag.BypassNormalLcd)
@@ -134,7 +138,18 @@ void TaskLCD(void *pvParameters)  // This is a task.
 					ClearLCD();
 				}
 				if(SystemFlag.EthCableConnected)
-					LCDShowIcon(ETH_ICON, ICONS_ROW, ETH_ICON_COL);
+				{
+					if(SystemFlag.EthClient)
+					{
+						if(ToggleEthIcon)
+							LCDShowIcon(ETH_ICON, ICONS_ROW, ETH_ICON_COL);
+						else
+							ClearChar(ICONS_ROW, ETH_ICON_COL);
+						ToggleEthIcon = !ToggleEthIcon;
+					}
+					else
+						LCDShowIcon(ETH_ICON, ICONS_ROW, ETH_ICON_COL);
+				}
 				else
 					ClearChar(ICONS_ROW, ETH_ICON_COL);
 				if(SystemFlag.BTActive)
@@ -333,7 +348,7 @@ void TaskLCD(void *pvParameters)  // This is a task.
 			LCDPrintString(TWO, CENTER_ALIGN, "Dispositivo BT");
 			LCDPrintString(THREE, CENTER_ALIGN, "connesso");
 		}
-		OsDelay(TASK_LCD_DELAY);
+		OsDelayUntill(&LastTaskWakeTime, TASK_LCD_DELAY);
 	}
 }
 #endif

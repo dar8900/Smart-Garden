@@ -22,7 +22,8 @@ bool BTActive = false;
 
 void BTInit(String ModuleName)
 {
-	Serial.println("TASK BT: init");
+	DBG("TASK BT: init");
+
 	String ModuleNameTot = "AT+NAME" + ModuleName;
 	Serial2.begin(9600);	
 	Serial2.write(ModuleNameTot.c_str());

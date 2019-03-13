@@ -26,18 +26,21 @@ void EthInit()
 
 void CheckCableConnection()
 {
-	EthernetClient ClientForCheck;
-	char *ServerName = "www.google.it";
-	if(ClientForCheck.connect(ServerName, 80))
+	if(!SystemFlag.EthClient)
 	{
-		SystemFlag.EthCableConnected = true;
-		ClientForCheck.stop();
-		GeneralServer.begin();
-		Serial.println("Task Eth-SD, ip server: ");
-		Serial.println(Ethernet.localIP());
+		EthernetClient ClientForCheck;
+		char *ServerName = "www.google.it";
+		if(ClientForCheck.connect(ServerName, 80))
+		{
+			SystemFlag.EthCableConnected = true;
+			ClientForCheck.stop();
+			GeneralServer.begin();
+			DBG("Task Eth-SD, ip server: ");
+			DBG(Ethernet.localIP());		
+		}
+		else
+			SystemFlag.EthCableConnected = false;
 	}
-	else
-		SystemFlag.EthCableConnected = false;
 }
 
 void EthServer()
@@ -55,7 +58,6 @@ void EthServer()
 				if (GeneralClient.available()) 
 				{
 					char c = GeneralClient.read();
-					Serial.write(c);
 					// if you've gotten to the end of the line (received a newline
 					// character) and the line is blank, the http request has ended,
 					// so you can send a reply

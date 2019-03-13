@@ -21,9 +21,11 @@ void SDInit()
 	if (!SD.begin(SD_CS)) 
 	{
 		SystemFlag.SDInitialize = false;
+		DBG("Task ETH_SD: SD non inizializzata");
 	}
 	else
 	{
+		DBG("Task ETH_SD: SD inizializzata");
 		SystemFlag.SDInitialize = true;	
 		if (!SD.exists("index.htm"))
 			SystemFlag.SDWebPagePresent = false;
@@ -39,6 +41,7 @@ void LogToSD()
 	{
 		if(LogToSDPeriod == LOG_PERIOD_SD)
 		{
+			DBG("Task SD_ETH: logging su sd card");
 			SystemFlag.SDLogging = true;
 			LogToSDPeriod = 0;
 			NameOfFile += String(TimeDate.Day) + "-" + String(TimeDate.Month) + "-" + String(TimeDate.Year);
@@ -56,7 +59,7 @@ void LogToSD()
 			// if the file isn't open, pop up an error:
 			else
 			{
-				Serial.println("TASK SD: file non aperto");
+				DBG("TASK SD: file non aperto");		
 			}
 			delay(500);
 		}
