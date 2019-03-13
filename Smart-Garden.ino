@@ -1,18 +1,10 @@
 #include "Smart-Garden.h"
 #include "Time.h"
-// #include "IgroSensor.h"
-// #include "Keyboard.h"
 #include <LCDLib.h>
-// #include "SDLog.h"
 #include "TaskCreate.h"
 #include "Icons.cpp"
 
-// extern const short BTIcon[];
-// extern const short SDIcon[];
-// extern const short SunIcon[];
-// extern const short MoonIcon[];
-// extern const short MidHoursIcon[];
-// extern const short PumpIcon[];
+
 
 GENERAL_FLAG SystemFlag;
 FLAG_EEPROM FlagForSave;
@@ -30,6 +22,8 @@ static void InitSystem()
 	pinMode(OK_BUTTON, INPUT);
 	pinMode(BT_LED_ACTIVE, INPUT);
 
+	SystemFlag.Restart = true;
+	
 	SystemFlag.DayTime = EEPROM.read(DAY_TIME_ADDR);
 	
 	// Se è il primo avvio
@@ -46,6 +40,7 @@ static void InitSystem()
 		DayTimeHours.TransitionHours = TRANSITION_HOURS_DFL;
 		FlagForSave.SaveHours = true;
 		SetTimeDate(DFLT_HOUR, DFLT_MINUTE, DFLT_DAY, DFLT_MONTH, DFLT_YEAR, &TimeDate);
+		DBG("Primo avvio");
 	}
 	else
 	{
@@ -54,7 +49,7 @@ static void InitSystem()
 		DayTimeHours.DayHours = EEPROM.read(DAY_HOUR_ADDR);
 		DayTimeHours.NightHours = EEPROM.read(NIGHT_HOUR_ADDR);
 		DayTimeHours.TransitionHours = EEPROM.read(TRANSITION_HOUR_ADDR);
-		LoadTimeDate(&TimeDate);
+		// LoadTimeDate(&TimeDate);
 	}
 }
 

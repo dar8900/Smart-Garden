@@ -31,11 +31,11 @@ void TaskEeprom(void *pvParameters)  // This is a task.
 			FlagForSave.SaveSecondCouter = false;
 			EEPROM.put(SECOND_COUNTER_ADDR, SecondCounter);
 		}
-		if(FlagForSave.SaveCalendar)
-		{
-			FlagForSave.SaveCalendar = false;
-			SaveTimeDate();
-		}
+		// if(FlagForSave.SaveCalendar)
+		// {
+			// FlagForSave.SaveCalendar = false;
+			// SaveTimeDate();
+		// }
 		OsDelay(TASK_EEPROM_DELAY);
 	}
 }

@@ -20,6 +20,7 @@
 
 typedef struct 
 {
+	bool Restart;
 	uint8_t DayTime;
 	uint8_t ManualPumpState;
 	bool TurnOnPumpAuto;

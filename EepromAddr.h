@@ -25,7 +25,7 @@ typedef struct
 	bool SaveHours;
 	bool SaveDimming;
 	bool SaveSecondCouter;
-	bool SaveCalendar;
+	// bool SaveCalendar;
 }FLAG_EEPROM;
 
 #endif

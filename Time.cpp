@@ -1,7 +1,7 @@
 #include "Time.h"
 #include "Smart-Garden.h"
 
-#define MINUTE_TO_LOG	10
+#define MINUTE_TO_LOG	15
 #define DELAY_SECOND 	1000
 
 uint32_t SecondCounter;
@@ -87,7 +87,7 @@ void CheckTime()
 		CalendarSecond++;
 		SecondCounter++;
 		CounterToLog++;
-		TimeDateCounterForSave++;
+		// TimeDateCounterForSave++;
 #ifdef TASK_ETH_SD
 		if(SystemFlag.SDInitialize && LogToSDPeriod < LOG_PERIOD_SD)
 			LogToSDPeriod++;
@@ -136,11 +136,11 @@ void CheckTime()
 		LogSecondCounter();
 	}
 	RefreshCalendar(&TimeDate);
-	if(TimeDateCounterForSave == LOG_PERIOD(30))
-	{
-		FlagForSave.SaveCalendar = true;
-		TimeDateCounterForSave = 0;
-	}
+	// if(TimeDateCounterForSave == LOG_PERIOD(60))
+	// {
+		// FlagForSave.SaveCalendar = true;
+		// TimeDateCounterForSave = 0;
+	// }
 }
 
 void SetTimeDate(uint8_t Hour, uint8_t Minute, uint8_t Day, uint8_t Month, uint16_t Year, CALENDAR_VAR *TimeDateToSet)
@@ -151,24 +151,24 @@ void SetTimeDate(uint8_t Hour, uint8_t Minute, uint8_t Day, uint8_t Month, uint1
 	TimeDateToSet->Day    = Day;
 	TimeDateToSet->Month  = Month;
 	TimeDateToSet->Year   = Year;
-	FlagForSave.SaveCalendar = true;
+	// FlagForSave.SaveCalendar = true;
 }
 
-void SaveTimeDate()
-{
-	EEPROM.update(CALENDAR_HOUR_ADDR, TimeDate.Hour);
-	EEPROM.update(CALENDAR_MINUTE_ADDR, TimeDate.Minute);
-	EEPROM.update(CALENDAR_DAY_ADDR, TimeDate.Day);
-	EEPROM.update(CALENDAR_MONTH_ADDR, TimeDate.Month);
-	EEPROM.put(CALENDAR_YEAR_ADDR, TimeDate.Year);
-}
+// void SaveTimeDate()
+// {
+	// EEPROM.update(CALENDAR_HOUR_ADDR, TimeDate.Hour);
+	// EEPROM.update(CALENDAR_MINUTE_ADDR, TimeDate.Minute);
+	// EEPROM.update(CALENDAR_DAY_ADDR, TimeDate.Day);
+	// EEPROM.update(CALENDAR_MONTH_ADDR, TimeDate.Month);
+	// EEPROM.put(CALENDAR_YEAR_ADDR, TimeDate.Year);
+// }
 
-void LoadTimeDate(CALENDAR_VAR *TimeDateToLoad)
-{
-	CalendarSecond = 0;
-	TimeDateToLoad->Hour   = EEPROM.read(CALENDAR_HOUR_ADDR);
-	TimeDateToLoad->Minute = EEPROM.read(CALENDAR_MINUTE_ADDR);
-	TimeDateToLoad->Day    = EEPROM.read(CALENDAR_DAY_ADDR);
-	TimeDateToLoad->Month  = EEPROM.read(CALENDAR_MONTH_ADDR);
-	EEPROM.get(CALENDAR_YEAR_ADDR, TimeDateToLoad->Year);
-}
+// void LoadTimeDate(CALENDAR_VAR *TimeDateToLoad)
+// {
+	// CalendarSecond = 0;
+	// TimeDateToLoad->Hour   = EEPROM.read(CALENDAR_HOUR_ADDR);
+	// TimeDateToLoad->Minute = EEPROM.read(CALENDAR_MINUTE_ADDR);
+	// TimeDateToLoad->Day    = EEPROM.read(CALENDAR_DAY_ADDR);
+	// TimeDateToLoad->Month  = EEPROM.read(CALENDAR_MONTH_ADDR);
+	// EEPROM.get(CALENDAR_YEAR_ADDR, TimeDateToLoad->Year);
+// }

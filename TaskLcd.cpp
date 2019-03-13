@@ -62,6 +62,12 @@ void TaskLCD(void *pvParameters)  // This is a task.
 	uint16_t LastTaskWakeTime = xTaskGetTickCount();
 	for (;;)
 	{
+		if(SystemFlag.Restart)
+		{
+			SystemFlag.Restart = false;
+			RegularScreen = false;
+			SetTime = true;
+		}
 		if(!SystemFlag.BypassNormalLcd)
 		{
 			if(!ClearLCDBT)
