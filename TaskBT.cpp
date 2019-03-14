@@ -123,62 +123,71 @@ void TaskBT(void *pvParameters)  // This is a task.
 {
 	(void) pvParameters;
 	uint16_t CheckBtActiveCnt = 0;
-	bool CmdExecuted = false, CommandFound = false;
+	bool BTPresent = false, CmdExecuted = false, CommandFound = false;
 	String Command = "";
 	uint8_t CmdRspIndex = 0;
 	uint16_t ShowCmdListCnt = (SEC_TO_MILLIS(10)/TASK_BT_DELAY);
-	
+	uint16_t LastTaskWakeTime = xTaskGetTickCount();
+	BTPresent = BTInit();
 	for(;;)
 	{
-		IsBTActive();
-		if(SystemFlag.BTActive)
+		if(BTPresent)
 		{
-			DBG("Task BT: dispositivo connesso");
-			if(ShowCmdListCnt == (SEC_TO_MILLIS(10)/TASK_BT_DELAY))
+			IsBTConnected();
+			if(SystemFlag.BTActive)
 			{
-				ShowCmdListCnt = 0;
-				WriteResponse("Lista comandi:");
-				for(CmdRspIndex = 0; CmdRspIndex < MAX_CMD_RSP_VALUES; CmdRspIndex++)
+				DBG("Task BT: dispositivo connesso");
+				if(ShowCmdListCnt == (SEC_TO_MILLIS(10)/TASK_BT_DELAY))
 				{
-					WriteResponse(PossibleCommandsResponse[CmdRspIndex].Command);
-					OsDelay(50);
+					ShowCmdListCnt = 0;
+					WriteResponse("Lista comandi:");
+					for(CmdRspIndex = 0; CmdRspIndex < MAX_CMD_RSP_VALUES; CmdRspIndex++)
+					{
+						WriteResponse(PossibleCommandsResponse[CmdRspIndex].Command);
+						OsDelay(50);
+					}
 				}
+				else
+				{
+					Command = ReadCommand();
+					if(Command != "")
+					{
+						DBG("Task BT: comando letto:" + Command);
+						for(CmdRspIndex = 0; CmdRspIndex < MAX_CMD_RSP_VALUES; CmdRspIndex++)
+						{
+							if(Command == PossibleCommandsResponse[CmdRspIndex].Command)
+							{
+								CommandFound = true;
+								CmdExecuted = ExecuteCommand(PossibleCommandsResponse[CmdRspIndex].CmdRspValue);
+								if(CmdExecuted)
+								{
+									WriteResponse(PossibleCommandsResponse[CmdRspIndex].Response);
+									CmdExecuted = false;
+								}
+								break;
+							}
+						}
+						if(CommandFound)
+							CommandFound = false;
+						else
+							WriteResponse("Comando non trovato");
+					}
+				}
+				ShowCmdListCnt++;
 			}
 			else
 			{
-				Command = ReadCommand();
-				if(Command != "")
-				{
-					DBG("Task BT: comando letto:" + Command);
-					for(CmdRspIndex = 0; CmdRspIndex < MAX_CMD_RSP_VALUES; CmdRspIndex++)
-					{
-						if(Command == PossibleCommandsResponse[CmdRspIndex].Command)
-						{
-							CommandFound = true;
-							CmdExecuted = ExecuteCommand(PossibleCommandsResponse[CmdRspIndex].CmdRspValue);
-							if(CmdExecuted)
-							{
-								WriteResponse(PossibleCommandsResponse[CmdRspIndex].Response);
-								CmdExecuted = false;
-							}
-							break;
-						}
-					}
-					if(CommandFound)
-						CommandFound = false;
-					else
-						WriteResponse("Comando non trovato");
-				}
+				SystemFlag.BypassNormalLcd = false;
+				SystemFlag.BypassNormalDimming = false;		
+				SystemFlag.BypassIgrosensorBT = false;			
 			}
-			ShowCmdListCnt++;
+			OsDelayUntill(&LastTaskWakeTime, TASK_BT_DELAY);
 		}
 		else
 		{
-			SystemFlag.BypassNormalLcd = false;
-			SystemFlag.BypassNormalDimming = false;		
-			SystemFlag.BypassIgrosensorBT = false;			
+			BTPresent = BTInit();
+			OsDelay(1000);
 		}
-		OsDelay(TASK_BT_DELAY);
 	}
 }
 

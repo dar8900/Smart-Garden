@@ -1,3 +1,4 @@
+#include <RTClib.h>
 #include "Time.h"
 #include "Smart-Garden.h"
 
@@ -8,6 +9,7 @@ uint32_t SecondCounter;
 uint32_t CalendarSecond;
 static uint32_t CounterToLog;
 static uint32_t TimeDateCounterForSave;
+static RTC_DS1307 rtc;
 uint32_t StartTime;
 uint16_t SecondForDimming = (SECONDS_MINUTE(TRANSITION_HOURS_DFL) / 255);
 DAY_TIME_HOURS DayTimeHours;
@@ -47,35 +49,54 @@ void LogSecondCounter()
 }
 
 
+
 static void RefreshCalendar(CALENDAR_VAR *TimeToRefresh)
 {
-	if(CalendarSecond == 60)
-	{
-		CalendarSecond = 0;
-		TimeToRefresh->Minute++;
-	}
-	if(TimeToRefresh->Minute == 60)
-	{
-		TimeToRefresh->Hour++;
-		TimeToRefresh->Minute = 0;
-	}
-	if(TimeToRefresh->Hour == 24)
-	{
-		TimeToRefresh->Day++;
-		TimeToRefresh->Hour = 0;
-	}
-	if(TimeToRefresh->Day == (DayForMonth[TimeToRefresh->Month] + 1))
-	{
-		TimeToRefresh->Month++;
-		TimeToRefresh->Day = 0;
-	}
-	if(TimeToRefresh->Month == 12)
-	{
-		TimeToRefresh->Year++;
-		TimeToRefresh->Month = 0;
-	}		
+	
+	TimeToRefresh->Hour =   rtc.now().hour();
+	TimeToRefresh->Minute = rtc.now().minute();
+	TimeToRefresh->Second = rtc.now().second();
+	TimeToRefresh->Day = 	rtc.now().day();
+	TimeToRefresh->Month = 	rtc.now().month();
+	TimeToRefresh->Year =   rtc.now().year();
+	// if(CalendarSecond == 60)
+	// {
+		// CalendarSecond = 0;
+		// TimeToRefresh->Minute++;
+	// }
+	// if(TimeToRefresh->Minute == 60)
+	// {
+		// TimeToRefresh->Hour++;
+		// TimeToRefresh->Minute = 0;
+	// }
+	// if(TimeToRefresh->Hour == 24)
+	// {
+		// TimeToRefresh->Day++;
+		// TimeToRefresh->Hour = 0;
+	// }
+	// if(TimeToRefresh->Day == (DayForMonth[TimeToRefresh->Month] + 1))
+	// {
+		// TimeToRefresh->Month++;
+		// TimeToRefresh->Day = 0;
+	// }
+	// if(TimeToRefresh->Month == 12)
+	// {
+		// TimeToRefresh->Year++;
+		// TimeToRefresh->Month = 0;
+	// }		
 }
 
+void RtcInit()
+{
+	if (! rtc.begin()) 
+	{
+		
+	}
+	if (! rtc.isrunning())
+	{
+		
+	}
+}
 
 void CheckTime()
 {
@@ -84,7 +105,7 @@ void CheckTime()
 	if(millis() - StartTime >= DELAY_SECOND)
 	{
 		StartTime = 0;
-		CalendarSecond++;
+		// CalendarSecond++;
 		SecondCounter++;
 		CounterToLog++;
 		// TimeDateCounterForSave++;
@@ -143,15 +164,9 @@ void CheckTime()
 	// }
 }
 
-void SetTimeDate(uint8_t Hour, uint8_t Minute, uint8_t Day, uint8_t Month, uint16_t Year, CALENDAR_VAR *TimeDateToSet)
+void SetTimeDate(uint8_t Hour, uint8_t Minute, uint8_t Day, uint8_t Month, uint16_t Year)
 {
-	CalendarSecond = 0;
-	TimeDateToSet->Hour   = Hour;
-	TimeDateToSet->Minute = Minute;
-	TimeDateToSet->Day    = Day;
-	TimeDateToSet->Month  = Month;
-	TimeDateToSet->Year   = Year;
-	// FlagForSave.SaveCalendar = true;
+	rtc.adjust(DateTime(Year, Month, Day, Hour, Minute, 0)); // anno, mese, giorno, h ,m,s
 }
 
 // void SaveTimeDate()

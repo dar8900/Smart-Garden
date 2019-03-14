@@ -31,6 +31,7 @@ void SDInit()
 			SystemFlag.SDWebPagePresent = false;
 		else
 			SystemFlag.SDWebPagePresent = true;
+		delay(1000);
 	}
 }
 
@@ -41,7 +42,7 @@ void LogToSD()
 	{
 		if(LogToSDPeriod == LOG_PERIOD_SD)
 		{
-			DBG("Task SD_ETH: logging su sd card");
+			DBG("Task ETH_SD: logging su sd card");
 			SystemFlag.SDLogging = true;
 			LogToSDPeriod = 0;
 			NameOfFile += String(TimeDate.Day) + "-" + String(TimeDate.Month) + "-" + String(TimeDate.Year);
@@ -59,7 +60,7 @@ void LogToSD()
 			// if the file isn't open, pop up an error:
 			else
 			{
-				DBG("TASK SD: file non aperto");		
+				DBG("TASK ETH_SD: file non aperto");		
 			}
 			delay(500);
 		}

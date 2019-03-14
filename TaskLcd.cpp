@@ -46,6 +46,21 @@ const char *TimeDateStr[] =
 };
 
 #ifdef TASK_LCD
+
+
+
+static void WaitForOk(uint8_t Row)
+{
+	ButtonPress = NO_PRESS;
+	while(ButtonPress != OK)
+	{
+		LCDPrintString(Row, CENTER_ALIGN, "Premere ok...");
+		OsDelay(500);
+	}
+	ButtonPress = NO_PRESS;
+}
+
+
 void TaskLCD(void *pvParameters)  // This is a task.
 {
 	(void) pvParameters;
@@ -77,6 +92,9 @@ void TaskLCD(void *pvParameters)  // This is a task.
 			}
 			if(RegularScreen)
 			{
+				// Disegna orario
+				LCDPrintString(ONE, LEFT_ALIGN, String(TimeDate.Hour) + ":" + String(TimeDate.Minute));
+				LCDPrintString(ONE, RIGHT_ALIGN, String(TimeDate.Day) + "/" + String(TimeDate.Month) + "/" + String(TimeDate.Year % 100));
 				if(RegularScreenCnt < REGULAR_SCREEN_REFRESH_DELAY)
 				{
 					switch(SystemFlag.DayTime)
@@ -92,7 +110,7 @@ void TaskLCD(void *pvParameters)  // This is a task.
 					LCDPrintString(THREE, LEFT_ALIGN, String(TimePeriod[SystemFlag.DayTime]));
 					LCDPrintString(FOUR, LEFT_ALIGN, String(PumpState[SystemFlag.ManualPumpState]));
 				}
-				if(RegularScreenCnt >= (REGULAR_SCREEN_REFRESH_DELAY + 10))
+				if(RegularScreenCnt >= REGULAR_SCREEN_REFRESH_DELAY)
 				{
 					if((SystemFlag.DayTime + 1) < MAX_DAY_TIME - 1)
 						LCDPrintString(THREE, CENTER_ALIGN, "Ore per:" + String(TimePeriod[SystemFlag.DayTime + 1]));
@@ -143,6 +161,8 @@ void TaskLCD(void *pvParameters)  // This is a task.
 					RegularScreenCnt = 0;
 					ClearLCD();
 				}
+				
+				// Disegno icone di stato periferiche
 				if(SystemFlag.EthCableConnected)
 				{
 					if(SystemFlag.EthClient)
@@ -319,10 +339,14 @@ void TaskLCD(void *pvParameters)  // This is a task.
 								MaxTimeSetValue = 23;
 								MinTimeSetValue = 0;
 								WichTimeStrValues = 0;
-								SetTimeDate(TimeDateValue[0], TimeDateValue[1], TimeDateValue[3], TimeDateValue[2] - 1, TimeDateValue[4] + 2000, &TimeDate);
+								SetTimeDate(TimeDateValue[0], TimeDateValue[1], TimeDateValue[3], TimeDateValue[2], TimeDateValue[4] + 2000);
 								SetTime = false;
 								RegularScreen = true;
-								ClearLCD();							
+								ClearLCD();	
+								LCDPrintString(ONE, CENTER_ALIGN, "Ora/data impostata:");
+								LCDPrintString(TWO, CENTER_ALIGN, String(TimeDateValue[0]) + ":" + String(TimeDateValue[1]) + " " + String(TimeDateValue[3]) + "/" + String(TimeDateValue[2]) + "/" + String(TimeDateValue[4] + 2000));
+								WaitForOk(THREE);
+								ClearLCD();
 								break;
 							default:
 								break;						

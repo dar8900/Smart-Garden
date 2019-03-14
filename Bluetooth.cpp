@@ -20,23 +20,33 @@ AT+PINxxxx      Imposta il pincode del modulo bluetooth (es.1234)
 uint16_t StartCntToActive;
 bool BTActive = false;
 
-void BTInit(String ModuleName)
+bool BTInit()
 {
 	DBG("TASK BT: init");
-
-	String ModuleNameTot = "AT+NAME" + ModuleName;
-	Serial2.begin(9600);	
-	Serial2.write(ModuleNameTot.c_str());
+	String ModuleName = "AT+NAMESG-001";
+	Serial2.begin(19200);	
+	Serial2.write(ModuleName.c_str());
 	delay(1500);
-	if (Serial2.available())
+	ModuleName = "";
+	while(Serial2.available())
 	{  
-		Serial.write(Serial2.read());
+		ModuleName += Serial2.readString();
+	}
+	if(ModuleName != "")
+	{
+		DBG("Task BT: " + ModuleName);
+		return true;
+	}
+	else
+	{
+		DBG("Task BT: scheda BT non presente");
+		return false;
 	}
 	// Serial2.write("AT+PIN2806");
 	// delay(1500);	
 }
 
-void IsBTActive()
+void IsBTConnected()
 {
 	if(StartCntToActive == 0 && digitalRead(BT_LED_ACTIVE))
 		StartCntToActive = millis();		

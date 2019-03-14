@@ -37,6 +37,7 @@ typedef struct
 {
 	uint8_t Hour;
 	uint8_t Minute;
+	uint8_t Second;
 	uint8_t Day;
 	uint8_t Month;
 	uint16_t Year;
@@ -65,11 +66,12 @@ extern CALENDAR_VAR TimeDate;
 extern const uint8_t DayForMonth[];
 extern uint16_t LogToSDPeriod;
 
+void RctInit(void);
 void CheckTime(void);
 void LogDayTime(void);
 void LogDimming(void);
 void LogSecondCounter(void);
 void SaveTimeDate(void);
-void SetTimeDate(uint8_t Hour, uint8_t Minute, uint8_t Day, uint8_t Month, uint16_t Year, CALENDAR_VAR *TimeDateToSet);
+void SetTimeDate(uint8_t Hour, uint8_t Minute, uint8_t Day, uint8_t Month, uint16_t Year);
 void LoadTimeDate(CALENDAR_VAR *TimeDateToLoad);
 #endif

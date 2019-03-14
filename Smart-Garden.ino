@@ -39,8 +39,8 @@ static void InitSystem()
 		DayTimeHours.NightHours = NIGHT_HOURS_DFL;
 		DayTimeHours.TransitionHours = TRANSITION_HOURS_DFL;
 		FlagForSave.SaveHours = true;
-		SetTimeDate(DFLT_HOUR, DFLT_MINUTE, DFLT_DAY, DFLT_MONTH, DFLT_YEAR, &TimeDate);
-		DBG("Primo avvio");
+		SetTimeDate(DFLT_HOUR, DFLT_MINUTE, DFLT_DAY, DFLT_MONTH, DFLT_YEAR);
+		DBG("Init System: Primo avvio");
 	}
 	else
 	{

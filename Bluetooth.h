@@ -10,8 +10,8 @@
 
 #endif
 
-void BTInit(String ModuleName);
-void IsBTActive(void);
+bool BTInit(void);
+void IsBTConnected(void);
 void WriteResponse(String Response);
 String ReadString(void);
 uint16_t ReadValue(void);

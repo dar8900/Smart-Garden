@@ -16,10 +16,38 @@ EthernetClient GeneralClient;
 
 void EthInit()
 {
+	uint8_t ReTryCnt = 5;
+	bool NoShieldConnected = false, EthNotDHCP = false;
 	Ethernet.init(ETH_CS);
-	if(!Ethernet.begin(MyMac))
+	if(Ethernet.hardwareStatus() != EthernetNoHardware)
+		NoShieldConnected = false;
+	else
+		NoShieldConnected = true;
+	if(!NoShieldConnected)
 	{
-		Ethernet.begin(MyMac, MyIp);
+		DBG("Task ETH_SD: Shield connessa");
+		while(!Ethernet.begin(MyMac))
+		{
+			ReTryCnt--;
+			if(ReTryCnt == 0)
+			{
+				EthNotDHCP = true;
+				break;
+			}
+			EthNotDHCP = false;
+			delay(1000);
+		}
+		if(EthNotDHCP)
+		{
+			Ethernet.begin(MyMac, MyIp);
+			DBG("Task ETH_SD: DHCP non trovato");
+		}
+		else
+			SystemFlag.EthCableConnected = true;
+	}
+	else
+	{
+		DBG("Task ETH_SD: Shield non connessa");
 	}
 	delay(1000);
 }
