@@ -40,7 +40,8 @@ static void InitSystem()
 		DayTimeHours.TransitionHours = TRANSITION_HOURS_DFL;
 		FlagForSave.SaveHours = true;
 		SetTimeDate(DFLT_HOUR, DFLT_MINUTE, DFLT_DAY, DFLT_MONTH, DFLT_YEAR);
-		DBG("Init System: Primo avvio");
+		EEPROM.write(FIRST_GO_ADDR, 1);
+		DBG("Init System-> Primo avvio");
 	}
 	else
 	{
@@ -49,6 +50,7 @@ static void InitSystem()
 		DayTimeHours.DayHours = EEPROM.read(DAY_HOUR_ADDR);
 		DayTimeHours.NightHours = EEPROM.read(NIGHT_HOUR_ADDR);
 		DayTimeHours.TransitionHours = EEPROM.read(TRANSITION_HOUR_ADDR);
+		EEPROM.update(FIRST_GO_ADDR, 0);
 		// LoadTimeDate(&TimeDate);
 	}
 }

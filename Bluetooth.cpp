@@ -22,7 +22,7 @@ bool BTActive = false;
 
 bool BTInit()
 {
-	DBG("TASK BT: init");
+	DBG("TASK BT-> init");
 	String ModuleName = "AT+NAMESG-001";
 	Serial2.begin(19200);	
 	Serial2.write(ModuleName.c_str());
@@ -34,12 +34,12 @@ bool BTInit()
 	}
 	if(ModuleName != "")
 	{
-		DBG("Task BT: " + ModuleName);
+		DBG("Task BT-> nome modulo: " + ModuleName);
 		return true;
 	}
 	else
 	{
-		DBG("Task BT: scheda BT non presente");
+		DBG("Task BT-> scheda BT non presente");
 		return false;
 	}
 	// Serial2.write("AT+PIN2806");

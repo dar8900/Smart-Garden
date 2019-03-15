@@ -36,7 +36,7 @@ void SensorsResponse()
 			SensorsMeanResponse += MeanSensors[SensorIndex];
 		}
 		SensorsMeanResponse /= MAX_SENSORS;
-		DBG("Task Igro: risposta sensori: " + String(SensorsMeanResponse));
+		DBG("Task Igro-> risposta sensori: " + String(SensorsMeanResponse));
 		if(SensorsMeanResponse >= PUMP_ACTIVATION_THR)
 			SystemFlag.TurnOnPumpAuto = true;
 		else 

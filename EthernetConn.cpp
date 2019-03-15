@@ -25,7 +25,7 @@ void EthInit()
 		NoShieldConnected = true;
 	if(!NoShieldConnected)
 	{
-		DBG("Task ETH_SD: Shield connessa");
+		DBG("Task ETH_SD-> Shield connessa");
 		while(!Ethernet.begin(MyMac))
 		{
 			ReTryCnt--;
@@ -40,14 +40,14 @@ void EthInit()
 		if(EthNotDHCP)
 		{
 			Ethernet.begin(MyMac, MyIp);
-			DBG("Task ETH_SD: DHCP non trovato");
+			DBG("Task ETH_SD-> DHCP non trovato");
 		}
 		else
 			SystemFlag.EthCableConnected = true;
 	}
 	else
 	{
-		DBG("Task ETH_SD: Shield non connessa");
+		DBG("Task ETH_SD-> Shield non connessa");
 	}
 	delay(1000);
 }
@@ -63,8 +63,7 @@ void CheckCableConnection()
 			SystemFlag.EthCableConnected = true;
 			ClientForCheck.stop();
 			GeneralServer.begin();
-			DBG("Task Eth-SD, ip server: ");
-			DBG(Ethernet.localIP());		
+			DBG("Task Eth-SD-> ip server: " + String(Ethernet.localIP()));	
 		}
 		else
 			SystemFlag.EthCableConnected = false;

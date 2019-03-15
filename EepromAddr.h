@@ -17,6 +17,9 @@
 #define CALENDAR_DAY_ADDR           22
 #define CALENDAR_MONTH_ADDR         23
 #define CALENDAR_YEAR_ADDR          24 // 2 byte
+
+#define FIRST_GO_ADDR			   100
+#define NUMBER_OF_WRITES_ADDR	   200
                                    
 
 typedef struct
