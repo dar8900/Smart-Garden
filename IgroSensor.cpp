@@ -1,5 +1,6 @@
 #include "Smart-Garden.h"
 #include "IgroSensor.h"
+#include "TaskIgroPump.h"
 
 #define MAX_SAMPLE	50
 
@@ -8,7 +9,7 @@
 uint16_t SensorsValue[MAX_SENSORS][MAX_SAMPLE];
 uint8_t Sample;
 static bool StopReading;
-uint16_t SensorsMeanResponse;
+
 
 void SensorsResponse()
 {
@@ -33,11 +34,11 @@ void SensorsResponse()
 				MeanSensors[SensorIndex] += SensorsValue[SensorIndex][SampleIndex];
 			}
 			MeanSensors[SensorIndex] /= MAX_SAMPLE;
-			SensorsMeanResponse += MeanSensors[SensorIndex];
+			SensorsValues.HygroMeanResponse += MeanSensors[SensorIndex];
 		}
-		SensorsMeanResponse /= MAX_SENSORS;
-		DBG("Task Igro-> risposta sensori: " + String(SensorsMeanResponse));
-		if(SensorsMeanResponse >= PUMP_ACTIVATION_THR)
+		SensorsValues.HygroMeanResponse /= MAX_SENSORS;
+		DBG("Task Igro-> risposta sensori: " + String(SensorsValues.HygroMeanResponse));
+		if(SensorsValues.HygroMeanResponse >= PUMP_ACTIVATION_THR)
 			SystemFlag.TurnOnPumpAuto = true;
 		else 
 			SystemFlag.TurnOnPumpAuto = false;

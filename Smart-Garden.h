@@ -46,12 +46,13 @@ typedef struct
 
 typedef enum
 {
-	DIMMING_LED 	= 3,
-	PUMP        	= 5,	
-	UP_BUTTON   	= 6,
-	DOWN_BUTTON 	= 7,
-	OK_BUTTON   	= 8,
-	BT_LED_ACTIVE   = 10,
+	DIMMING_LED 	= 3,	
+	UP_BUTTON   	= 22,
+	DOWN_BUTTON 	= 23,
+	OK_BUTTON   	= 24,
+	BT_LED_ACTIVE   = 25,
+	DHT_PIN         = 26,
+	PUMP        	= 27,
 	SD_CS			= 53,
 	ETH_CS          = 49
 }PINS;

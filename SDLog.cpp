@@ -3,7 +3,7 @@
 #include <Ethernet.h>
 #include "Smart-Garden.h"
 #include "SDLog.h"
-#include "IgroSensor.h"
+#include "TaskIgroPump.h"
 #include "Time.h"
 
 
@@ -52,8 +52,9 @@ void LogToSD()
 			if (LogFile) 
 			{
 				LogFile.print("Igrometro;");
-				LogFile.print(String(SensorsMeanResponse) + ";Ora;");
-				LogFile.print(String(TimeDate.Hour) + ":" + String(TimeDate.Minute));
+				LogFile.print(String(SensorsValues.HygroMeanResponse));
+				LogFile.print("Temperatura;" + String(SensorsValues.Temperature) + ";Umidità;" + String(SensorsValues.Humidity));
+				LogFile.print(";Ora;" + String(TimeDate.Hour) + ":" + String(TimeDate.Minute));
 				LogFile.println();
 				LogFile.close();
 			}
