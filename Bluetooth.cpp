@@ -20,6 +20,8 @@ AT+PINxxxx      Imposta il pincode del modulo bluetooth (es.1234)
 uint16_t StartCntToActive;
 bool BTActive = false;
 
+// bool BTConnected;
+
 bool BTInit()
 {
 	DBG("TASK BT-> init");
@@ -30,11 +32,12 @@ bool BTInit()
 	ModuleName = "";
 	while(Serial2.available())
 	{  
-		ModuleName += Serial2.readString();
+		ModuleName += char(Serial2.read());
 	}
 	if(ModuleName != "")
 	{
-		DBG("Task BT-> nome modulo: " + ModuleName);
+		DBG("Task BT-> nome modulo:");
+		DBG(ModuleName);
 		return true;
 	}
 	else
@@ -50,18 +53,17 @@ void IsBTConnected()
 {
 	if(StartCntToActive == 0 && digitalRead(BT_LED_ACTIVE))
 		StartCntToActive = millis();		
-	else
-	{
-		StartCntToActive = 0;
-		SystemFlag.BTActive = false;
-	}
+
 	if(StartCntToActive > 0)
 	{
 		if(digitalRead(BT_LED_ACTIVE))
 			BTActive = true;
 		else
+		{
+			StartCntToActive = 0;
 			BTActive = false;
-		if(millis() - StartCntToActive >= 2000 && BTActive)
+		}
+		if(millis() - StartCntToActive >= 1000 && BTActive)
 		{
 			StartCntToActive = 0;
 			SystemFlag.BTActive = true;
@@ -80,17 +82,20 @@ String ReadString()
 	String ReadedCommand = "";
 	while(Serial2.available())
 	{
-		ReadedCommand += Serial2.readString();
+		ReadedCommand += char(Serial2.read());
 	}
 	return ReadedCommand;
 }
 
 uint16_t ReadValue()
 {
-	uint16_t ReadedValue = 25;
+	String ReadedValue = "";
 	while(Serial2.available())
 	{
-		ReadedValue = (uint16_t)Serial2.read();
+		ReadedValue += char(Serial2.read());
 	}
-	return ReadedValue;	
+	if(ReadedValue != "")
+		return ReadedValue.toInt();	
+	else 
+		return 25;
 }

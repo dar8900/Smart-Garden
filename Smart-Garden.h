@@ -27,13 +27,11 @@ typedef struct
 	bool RefreshDimming;
 	bool SettingHours;
 	bool BypassIgrosensor;
-#ifdef TASK_ETH_SD
 	bool SDInitialize;
 	bool SDLogging;
 	bool SDWebPagePresent;
 	bool EthCableConnected;
 	bool EthClient;
-#endif
 	bool BTActive;
 	bool BypassNormalLcd;
 	bool BypassNormalDimming;
@@ -53,8 +51,8 @@ typedef enum
 	BT_LED_ACTIVE   = 25,
 	DHT_PIN         = 26,
 	PUMP        	= 27,
-	SD_CS			= 53,
-	ETH_CS          = 49
+	SD_CS			= 11,
+	ETH_CS          = 10
 }PINS;
 
 typedef enum

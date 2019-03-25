@@ -69,6 +69,7 @@ void setup()
 {
 	InitSystem();
 	LCDInit();
+	RtcInit();
 	CreateSystemIcons();
 	OSInit();
 }

@@ -3,17 +3,17 @@
 #include <Ethernet.h>
 #include "Smart-Garden.h"
 #include "SDLog.h"
-#include "TaskIgroPump.h"
-#include "Time.h"
 
+#define UINT16_T_MAX	65534
 
-#define LOG_FILE_NAME	"IgroValues "
+#define LOG_FILE_NAME	"IgroValues.txt"
 
 
 extern EthernetClient GeneralClient;
 
 File LogFile;
 File WebPage;
+uint16_t LogCnt;
 
 void SDInit()
 {
@@ -40,31 +40,26 @@ void LogToSD()
 	String NameOfFile = LOG_FILE_NAME;
 	if(SystemFlag.SDInitialize)
 	{
-		if(LogToSDPeriod == LOG_PERIOD_SD)
+		LogCnt++;
+		if(LogCnt > UINT16_T_MAX)
+			LogCnt = 1;
+		DBG("Task ETH_SD-> logging su sd card");
+		SystemFlag.SDLogging = true;
+		LogFile = SD.open(NameOfFile, FILE_WRITE);
+		// if the file is available, write to it:
+		if (LogFile) 
 		{
-			DBG("Task ETH_SD-> logging su sd card");
-			SystemFlag.SDLogging = true;
-			LogToSDPeriod = 0;
-			NameOfFile += String(TimeDate.Day) + "-" + String(TimeDate.Month) + "-" + String(TimeDate.Year);
-			NameOfFile += ".CSV";
-			LogFile = SD.open(NameOfFile, FILE_WRITE);
-			// if the file is available, write to it:
-			if (LogFile) 
-			{
-				LogFile.print("Igrometro;");
-				LogFile.print(String(SensorsValues.HygroMeanResponse));
-				LogFile.print("Temperatura;" + String(SensorsValues.Temperature) + ";Umidità;" + String(SensorsValues.Humidity));
-				LogFile.print(";Ora;" + String(TimeDate.Hour) + ":" + String(TimeDate.Minute));
-				LogFile.println();
-				LogFile.close();
-			}
-			// if the file isn't open, pop up an error:
-			else
-			{
-				DBG("Task ETH_SD-> file non aperto");		
-			}
-			delay(500);
+			LogFile.print("lOG NUMERO ");
+			LogFile.print(String(LogCnt));
+			LogFile.println();
+			LogFile.close();
 		}
+		// if the file isn't open, pop up an error:
+		else
+		{
+			DBG("Task ETH_SD-> file non aperto");		
+		}
+		delay(500);
 		SystemFlag.SDLogging = false;
 	}
 }

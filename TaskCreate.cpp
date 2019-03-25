@@ -1,45 +1,25 @@
 #include "TaskCreate.h"
 #include "Smart-Garden.h"
 #include "TaskLcd.h"
-#include "TaskKeyboard.h"
+#include "TaskKeyboardTime.h"
 #include "TaskEeprom.h"
 #include "TaskEth-SD.h"
-#include "TaskIgroPump.h"
-#include "TaskTime.h"
-#include "TaskDimming.h"
+// #include "TaskIgroPump.h"
+// #include "TaskTime.h"
+#include "TaskDimmingIgro.h"
 #include "TaskBT.h"
 // #include "TaskEth.h"
 
 void OSInit()
 {
 
-#ifdef TASK_DIMMING
+#ifdef TASK_DIMMING_IGROSENSORPUMP
 	xTaskCreate(
-	TaskDimmingLed
-	,  (const portCHAR *) "DimmingLed"
-	,  TASK_DIMMING_STACK  // Stack size
+	TaskDimmingLed_Igro
+	,  (const portCHAR *) "DimmingLedIgro"
+	,  TASK_DIMMING_IGROSENSORPUMP_STACK  // Stack size
 	,  NULL
-	,  TASK_DIMMING_PRIORITY  // Priority
-	,  NULL );
-#endif
-
-#ifdef TASK_TIME	
-	xTaskCreate(
-	TaskTime
-	,  (const portCHAR *) "Time"
-	,  TASK_TIME_STACK  // Stack size
-	,  NULL
-	,  TASK_TIME_PRIORITY  // Priority
-	,  NULL );
-#endif
-
-#ifdef TASK_IGROSENSORPUMP	
-	xTaskCreate(
-	TaskIgroSensorPump
-	,  (const portCHAR *) "IgroSensorPump"
-	,  TASK_IGROSENSORPUMP_STACK  // Stack size
-	,  NULL
-	,  TASK_IGROSENSORPUMP_PRIORITY  // Priority
+	,  TASK_DIMMING_IGROSENSORPUMP_PRIORITY  // Priority
 	,  NULL );
 #endif
 
@@ -53,13 +33,13 @@ void OSInit()
 	,  NULL );
 #endif
 
-#ifdef TASK_KEYBOARD	
+#ifdef TASK_KEYBOARD_TIME_DELAY	
 	xTaskCreate(
-	TaskKeyboard
-	,  (const portCHAR *) "Keyboard"
-	,  TASK_KEYBOARD_STACK  // Stack size
+	TaskKeyboardTime
+	,  (const portCHAR *) "KeyboardTime"
+	,  TASK_KEYBOARD_TIME_STACK  // Stack size
 	,  NULL
-	,  TASK_KEYBOARD_PRIORITY  // Priority
+	,  TASK_KEYBOARD_TIME_PRIORITY  // Priority
 	,  NULL );
 #endif
 
@@ -93,14 +73,6 @@ void OSInit()
 	,  NULL );
 #endif
 
-// #ifdef TASK_ETH
-	// xTaskCreate(
-	// TaskEth
-	// ,  (const portCHAR *) "ETH"
-	// ,  TASK_ETH_STACK  // Stack size
-	// ,  NULL
-	// ,  TASK_ETH_PRIORITY // Priority
-	// ,  NULL );
-// #endif
+
 
 }

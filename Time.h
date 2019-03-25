@@ -66,7 +66,7 @@ extern CALENDAR_VAR TimeDate;
 extern const uint8_t DayForMonth[];
 extern uint16_t LogToSDPeriod;
 
-void RctInit(void);
+void RtcInit(void);
 void CheckTime(void);
 void LogDayTime(void);
 void LogDimming(void);

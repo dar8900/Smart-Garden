@@ -1,6 +1,6 @@
 #include "Smart-Garden.h"
 
-const short BTIcon[] = 
+const uint8_t BTIcon[] = 
 {
 	0x06,
 	0x15,
@@ -12,7 +12,7 @@ const short BTIcon[] =
 	0x06,
 };
 
-const short SDIcon[] = 
+const uint8_t SDIcon[] = 
 {
 	0x1E,
 	0x12,
@@ -24,7 +24,7 @@ const short SDIcon[] =
 	0x1F
 };
 
-const short SunIcon[] = 
+const uint8_t SunIcon[] = 
 {
 	0x04,
 	0x15,
@@ -36,7 +36,7 @@ const short SunIcon[] =
 	0x04
 };
 
-const short MoonIcon[] = 
+const uint8_t MoonIcon[] = 
 {
 	0x0C,
 	0x06,
@@ -48,7 +48,7 @@ const short MoonIcon[] =
 	0x0C
 };
 
-const short MidHoursIcon[] = 
+const uint8_t MidHoursIcon[] = 
 {
 	0x00,
 	0x04,
@@ -60,7 +60,7 @@ const short MidHoursIcon[] =
 	0x1F
 };
 
-const short PumpIcon[] = 
+const uint8_t PumpIcon[] = 
 {
 	0x04,
 	0x15,
@@ -72,7 +72,7 @@ const short PumpIcon[] =
 	0x04
 };
 
-const short EthIcon[] = 
+const uint8_t EthIcon[] = 
 {
 	0x0E,
 	0x0A,

@@ -1,5 +1,5 @@
-#ifndef TASK_IGRO_PUMP_H
-#define TASK_IGRO_PUMP_H
+#ifndef TASK_DIMMING_IGRO_H
+#define TASK_DIMMING_IGRO_H
 #include <Arduino.h>
 
 typedef struct
@@ -11,5 +11,6 @@ typedef struct
 
 extern SENSOR_VAR SensorsValues;
 
-void TaskIgroSensorPump( void *pvParameters );
+
+void TaskDimmingLed_Igro( void *pvParameters );
 #endif

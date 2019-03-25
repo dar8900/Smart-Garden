@@ -6,7 +6,11 @@
 #include "IgroSensor.h"
 #include "TaskBT.h"
 
+
+#define MAX_LCD_CHARS	20
+
 #define REGULAR_SCREEN_REFRESH_DELAY 	40
+
 
 #define ICONS_ROW				ONE
 #define ETH_ICON_COL			 6
@@ -47,7 +51,7 @@ const char *TimeDateStr[] =
 
 #ifdef TASK_LCD
 
-
+char Toprint[MAX_LCD_CHARS + 1];
 
 static void WaitForOk(uint8_t Row)
 {
@@ -75,6 +79,7 @@ void TaskLCD(void *pvParameters)  // This is a task.
 	uint8_t MaxTimeSetValue = 23, MinTimeSetValue = 0;
 	uint8_t WichTimeStrValues = 0;
 	uint16_t LastTaskWakeTime = xTaskGetTickCount();
+
 	for (;;)
 	{
 		if(SystemFlag.Restart)
@@ -93,8 +98,10 @@ void TaskLCD(void *pvParameters)  // This is a task.
 			if(RegularScreen)
 			{
 				// Disegna orario
-				LCDPrintString(ONE, LEFT_ALIGN, String(TimeDate.Hour) + ":" + String(TimeDate.Minute));
-				LCDPrintString(ONE, RIGHT_ALIGN, String(TimeDate.Day) + "/" + String(TimeDate.Month) + "/" + String(TimeDate.Year % 100));
+				snprintf(Toprint, MAX_LCD_CHARS, "%02d:%02d", TimeDate.Hour, TimeDate.Minute);
+				LCDPrintString(ONE, LEFT_ALIGN, Toprint);
+				snprintf(Toprint, MAX_LCD_CHARS, "%02d/%02d/%02d", TimeDate.Hour, TimeDate.Minute, TimeDate.Year % 100);
+				LCDPrintString(ONE, RIGHT_ALIGN, Toprint);
 				if(RegularScreenCnt < REGULAR_SCREEN_REFRESH_DELAY)
 				{
 					switch(SystemFlag.DayTime)
@@ -107,30 +114,34 @@ void TaskLCD(void *pvParameters)  // This is a task.
 						default:
 							break;
 					}					
-					LCDPrintString(THREE, LEFT_ALIGN, String(TimePeriod[SystemFlag.DayTime]));
-					LCDPrintString(FOUR, LEFT_ALIGN, String(PumpState[SystemFlag.ManualPumpState]));
+					LCDPrintString(THREE, LEFT_ALIGN, TimePeriod[SystemFlag.DayTime]);
+					LCDPrintString(FOUR, LEFT_ALIGN, PumpState[SystemFlag.ManualPumpState]);
 				}
 				if(RegularScreenCnt >= REGULAR_SCREEN_REFRESH_DELAY)
 				{
 					if((SystemFlag.DayTime + 1) < MAX_DAY_TIME - 1)
-						LCDPrintString(THREE, CENTER_ALIGN, "Ore per:" + String(TimePeriod[SystemFlag.DayTime + 1]));
+						snprintf(Toprint, MAX_LCD_CHARS, "Ore per: %s", TimePeriod[SystemFlag.DayTime + 1]);
 					else
-						LCDPrintString(THREE, CENTER_ALIGN, "Ore per:" + String(TimePeriod[IN_DAY]));
+						snprintf(Toprint, MAX_LCD_CHARS, "Ore per: %s", TimePeriod[IN_DAY]);
+					LCDPrintString(THREE, CENTER_ALIGN, Toprint);
+
 					switch(SystemFlag.DayTime)
 					{
 						case IN_DAY:
-							LCDPrintString(FOUR, CENTER_ALIGN, String(SECONDS_MINUTE(DayTimeHours.DayHours) - MINUTE_SECOND(SecondCounter)) + "h");
+							snprintf(Toprint, MAX_LCD_CHARS, "%d%c", (SECONDS_MINUTE(DayTimeHours.DayHours) - MINUTE_SECOND(SecondCounter)), 'h');							
 							break;
 						case IN_NIGHT:
-							LCDPrintString(FOUR, CENTER_ALIGN, String(SECONDS_MINUTE(DayTimeHours.NightHours) - MINUTE_SECOND(SecondCounter)) + "h");
+							snprintf(Toprint, MAX_LCD_CHARS, "%d%c", (SECONDS_MINUTE(DayTimeHours.NightHours) - MINUTE_SECOND(SecondCounter)), 'h');						
 							break;
 						case TO_DAY:
 						case TO_NIGHT:
-							LCDPrintString(FOUR, CENTER_ALIGN, String(SECONDS_MINUTE(DayTimeHours.TransitionHours) - MINUTE_SECOND(SecondCounter)) + "h");
+							snprintf(Toprint, MAX_LCD_CHARS, "%d%c", (SECONDS_MINUTE(DayTimeHours.TransitionHours) - MINUTE_SECOND(SecondCounter)), 'h');
 							break;
 						default:
 							break;
 					}
+					LCDPrintString(FOUR, CENTER_ALIGN, Toprint);
+
 				}
 				switch(ButtonPress)
 				{
@@ -190,7 +201,7 @@ void TaskLCD(void *pvParameters)  // This is a task.
 			else if(SetPump)
 			{
 				SystemFlag.BypassIgrosensor = true;
-				LCDPrintString(TWO, LEFT_ALIGN, String(PumpState[SystemFlag.ManualPumpState]));
+				LCDPrintString(TWO, LEFT_ALIGN, PumpState[SystemFlag.ManualPumpState]);
 				if(SystemFlag.ManualPumpState == PUMP_ON)
 					LCDShowIcon(PUMP_ICON, ICONS_ROW, PUMP_ICON_COL);
 				else
@@ -224,9 +235,10 @@ void TaskLCD(void *pvParameters)  // This is a task.
 			}
 			else if(SetHour)
 			{
-				LCDPrintString(ONE, LEFT_ALIGN, "Ore di:");
-				LCDPrintString(ONE, RIGHT_ALIGN, SetTimePeriod[ActualTime]);
-				LCDPrintString(TWO, CENTER_ALIGN, String(Hours) + "h");
+				snprintf(Toprint, MAX_LCD_CHARS, "%s%d", "Ore di:", SetTimePeriod[ActualTime]);
+				LCDPrintString(ONE, CENTER_ALIGN, Toprint);
+				snprintf(Toprint, MAX_LCD_CHARS, "%d%c", Hours, 'h');
+				LCDPrintString(TWO, CENTER_ALIGN, Toprint);
 				switch(ButtonPress)
 				{
 					case UP:
@@ -287,7 +299,7 @@ void TaskLCD(void *pvParameters)  // This is a task.
 			{
 				LCDPrintString(ONE, CENTER_ALIGN, "Imposta");
 				LCDPrintString(TWO, CENTER_ALIGN, TimeDateStr[WichTimeStrValues]);
-				LCDPrintString(THREE, CENTER_ALIGN, String(TimeDateValue[WichTimeStrValues]));
+				LCDPrintValue(THREE, CENTER_ALIGN, TimeDateValue[WichTimeStrValues]);
 				switch(ButtonPress)
 				{
 					case UP:
@@ -344,7 +356,8 @@ void TaskLCD(void *pvParameters)  // This is a task.
 								RegularScreen = true;
 								ClearLCD();	
 								LCDPrintString(ONE, CENTER_ALIGN, "Ora/data impostata:");
-								LCDPrintString(TWO, CENTER_ALIGN, String(TimeDateValue[0]) + ":" + String(TimeDateValue[1]) + " " + String(TimeDateValue[3]) + "/" + String(TimeDateValue[2]) + "/" + String(TimeDateValue[4] + 2000));
+								snprintf(Toprint, MAX_LCD_CHARS, "%02d:%02d %02d/%02d/%04d", TimeDateValue[0], TimeDateValue[1], TimeDateValue[3], TimeDateValue[2], TimeDateValue[4] + 2000);
+								LCDPrintString(TWO, CENTER_ALIGN, Toprint);
 								WaitForOk(THREE);
 								ClearLCD();
 								break;

@@ -8,13 +8,13 @@
 
 const COMMAND_RESPONSE_S PossibleCommandsResponse[MAX_CMD_RSP_VALUES]
 {
-	{"Accendi pompa"     ,	"Pompa accesa"			,   BT_PUMP_ON       },
-	{"Spegni pompa"      ,  "Pompa spenta"          ,   BT_PUMP_OFF      },
-	{"Accendi led"       ,  "Led accesi"            ,   BT_LED_ON        },
-	{"Spegni led" 	  	 ,  "Led spenti"            ,   BT_LED_OFF       },
-	{"Imposta ore giorno",  "Ore giorno impostate"  ,   BT_SET_DAY       },
-	{"Imposta ore notte" ,  "Ore notte impostate"   ,   BT_SET_NIGHT     },
-	{"Imposta ore mezzo" ,  "Ore mezzo impostate"   ,   BT_SET_MIDHOUR   },
+	{"Pompa accesa: p on"         ,	 "Pompa accesa"			 ,   BT_PUMP_ON       },
+	{"Pompa spenta: p off"        ,  "Pompa spenta"          ,   BT_PUMP_OFF      },
+	{"Led accesi: led on"         ,  "Led accesi"            ,   BT_LED_ON        },
+	{"Led spenti: led off" 	  	  ,  "Led spenti"            ,   BT_LED_OFF       },
+	{"Imposta ore giorno: dayH"   ,  "Ore giorno impostate"  ,   BT_SET_DAY       },
+	{"Imposta ore notte: nightH"  ,  "Ore notte impostate"   ,   BT_SET_NIGHT     },
+	{"Imposta ore di mezzo: midH" ,  "Ore mezzo impostate"   ,   BT_SET_MIDHOUR   },
 };
 
 static String ReadCommand()
@@ -28,14 +28,27 @@ static String ReadCommand()
 static uint8_t ReadHour()
 {
 	uint8_t Hour = 0;
+	WriteResponse("");
 	do
 	{
 		Hour = (uint8_t)ReadValue();
+		DBG(Hour);
 		OsDelay(100);
 	}while(Hour == 25);
+	DBG(Hour);
 	return Hour; 
 }
 
+static void CheckBTConn()
+{
+	if(!SystemFlag.BTActive)
+		DBG("TaskBT-> Controllo connessione");
+	while(!SystemFlag.BTActive)
+	{
+		IsBTConnected();
+		OsDelay(10);
+	}	
+}
 
 static bool ExecuteCommand(uint8_t CmdValue)
 {
@@ -126,67 +139,84 @@ void TaskBT(void *pvParameters)  // This is a task.
 	bool BTPresent = false, CmdExecuted = false, CommandFound = false;
 	String Command = "";
 	uint8_t CmdRspIndex = 0;
-	uint16_t ShowCmdListCnt = (SEC_TO_MILLIS(10)/TASK_BT_DELAY);
+	uint16_t ShowCmdListCnt = (30000/TASK_BT_DELAY);
 	uint16_t LastTaskWakeTime = xTaskGetTickCount();
+	bool First = true;
 	BTPresent = BTInit();
 	for(;;)
 	{
 		if(BTPresent)
 		{
-			IsBTConnected();
+			CheckBTConn();
 			if(SystemFlag.BTActive)
 			{
-				DBG("Task BT-> dispositivo connesso");
-				if(ShowCmdListCnt == (SEC_TO_MILLIS(10)/TASK_BT_DELAY))
+				if(First)
 				{
-					ShowCmdListCnt = 0;
-					WriteResponse("Lista comandi:");
-					for(CmdRspIndex = 0; CmdRspIndex < MAX_CMD_RSP_VALUES; CmdRspIndex++)
+					WriteResponse("Smart Garden 001 connessa");
+					First = false;
+				}
+				if(SystemFlag.BTActive)
+				{
+					DBG("Task BT-> dispositivo connesso");
+					if(ShowCmdListCnt == (30000/TASK_BT_DELAY))
 					{
-						WriteResponse(PossibleCommandsResponse[CmdRspIndex].Command);
-						OsDelay(50);
+						ShowCmdListCnt = 0;
+						WriteResponse("Lista comandi:");
+						for(CmdRspIndex = 0; CmdRspIndex < MAX_CMD_RSP_VALUES; CmdRspIndex++)
+						{
+							WriteResponse(PossibleCommandsResponse[CmdRspIndex].Command);
+							OsDelay(50);
+						}
+						SystemFlag.BTActive = false;
+						CheckBTConn();
 					}
+					else
+					{
+						Command = ReadCommand();
+						if(Command != "")
+						{
+							DBG("Task BT-> comando letto:" + Command);
+							for(CmdRspIndex = 0; CmdRspIndex < MAX_CMD_RSP_VALUES; CmdRspIndex++)
+							{
+								if(Command == PossibleCommandsResponse[CmdRspIndex].Command)
+								{
+									CommandFound = true;
+									CmdExecuted = ExecuteCommand(PossibleCommandsResponse[CmdRspIndex].CmdRspValue);
+									if(CmdExecuted)
+									{
+										WriteResponse("");
+										WriteResponse(PossibleCommandsResponse[CmdRspIndex].Response);
+										CmdExecuted = false;
+									}
+									break;
+								}
+							}
+							if(CommandFound)
+								CommandFound = false;
+							else
+							{
+								WriteResponse("");
+								WriteResponse(Command);
+								WriteResponse("Comando non riconosciuto");
+							}
+						}
+					}
+					ShowCmdListCnt++;
 				}
 				else
 				{
-					Command = ReadCommand();
-					if(Command != "")
-					{
-						DBG("Task BT-> comando letto:" + Command);
-						for(CmdRspIndex = 0; CmdRspIndex < MAX_CMD_RSP_VALUES; CmdRspIndex++)
-						{
-							if(Command == PossibleCommandsResponse[CmdRspIndex].Command)
-							{
-								CommandFound = true;
-								CmdExecuted = ExecuteCommand(PossibleCommandsResponse[CmdRspIndex].CmdRspValue);
-								if(CmdExecuted)
-								{
-									WriteResponse(PossibleCommandsResponse[CmdRspIndex].Response);
-									CmdExecuted = false;
-								}
-								break;
-							}
-						}
-						if(CommandFound)
-							CommandFound = false;
-						else
-							WriteResponse("Comando non trovato");
-					}
+					SystemFlag.BypassNormalLcd = false;
+					SystemFlag.BypassNormalDimming = false;		
+					SystemFlag.BypassIgrosensorBT = false;			
 				}
-				ShowCmdListCnt++;
+				OsDelayUntill(&LastTaskWakeTime, TASK_BT_DELAY);
 			}
 			else
 			{
-				SystemFlag.BypassNormalLcd = false;
-				SystemFlag.BypassNormalDimming = false;		
-				SystemFlag.BypassIgrosensorBT = false;			
+				BTPresent = BTInit();
+				First = true;
+				OsDelay(1000);
 			}
-			OsDelayUntill(&LastTaskWakeTime, TASK_BT_DELAY);
-		}
-		else
-		{
-			BTPresent = BTInit();
-			OsDelay(1000);
 		}
 	}
 }

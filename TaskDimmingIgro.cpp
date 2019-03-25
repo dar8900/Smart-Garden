@@ -1,10 +1,24 @@
-#include "TaskDimming.h"
+#include "TaskDimmingIgro.h"
 #include "Smart-Garden.h"
+#include "IgroSensor.h"
+#include <DHT.h>
 #include "Time.h"
 
 int16_t Dimming = 0;
 
-#ifdef TASK_DIMMING
+#ifdef TASK_DIMMING_IGROSENSORPUMP
+
+#define DHTTYPE DHT11 
+
+DHT THSensor(DHT_PIN, DHTTYPE);
+SENSOR_VAR SensorsValues;
+
+static void ReadFromTHSensor()
+{
+	SensorsValues.Humidity = THSensor.readHumidity();
+	SensorsValues.Temperature = THSensor.readTemperature();
+}
+
 
 static void GardenLight()
 {
@@ -58,17 +72,30 @@ static void GardenLight()
 	}	
 }
 
+static void SensorsValutation()	
+{
+	if(!SystemFlag.BypassIgrosensor && !SystemFlag.BypassIgrosensorBT)
+	{
+		SensorsResponse();
+		PumpAction(SystemFlag.TurnOnPumpAuto);
+	}
+	else
+	{
+		PumpAction(SystemFlag.ManualPumpState);
+	}
+	ReadFromTHSensor();
+}
 
 
-
-
-void TaskDimmingLed(void *pvParameters)  // This is a task.
+void TaskDimmingLed_Igro(void *pvParameters)  // This is a task.
 {
 	(void) pvParameters;
+	THSensor.begin();
 	for (;;)
 	{
 		GardenLight();
-		OsDelay(TASK_DIMMING_DELAY);
+		SensorsValutation();
+		OsDelay(TASK_DIMMING_IGROSENSORPUMP_DELAY);
 	}
 }
 #endif

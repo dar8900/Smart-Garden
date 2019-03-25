@@ -116,6 +116,7 @@ void CheckTime()
 	}
 	switch(SystemFlag.DayTime)
 	{
+		// Per debug ho messo i minuti invece delle ore
 		case IN_DAY:
 			if(SecondCounter >= SECONDS_MINUTE(DayTimeHours.DayHours))
 			{

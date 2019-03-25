@@ -4,7 +4,7 @@
 #include "Smart-Garden.h"
 #include "SDLog.h"
 
-IPAddress MyIp(192, 168, 1, 177);
+IPAddress MyIp(192, 168, 0, 177);
 
 byte MyMac[] = 
 {
@@ -14,33 +14,37 @@ byte MyMac[] =
 EthernetServer GeneralServer(80);
 EthernetClient GeneralClient;
 
+bool EthPresent;
+
 void EthInit()
 {
 	uint8_t ReTryCnt = 5;
 	bool NoShieldConnected = false, EthNotDHCP = false;
 	Ethernet.init(ETH_CS);
+	delay(100);
 	if(Ethernet.hardwareStatus() != EthernetNoHardware)
-		NoShieldConnected = false;
-	else
+	{
 		NoShieldConnected = true;
+		EthPresent = false;
+	}
+	else
+	{
+		NoShieldConnected = false;
+		EthPresent = true;
+	}
 	if(!NoShieldConnected)
 	{
 		DBG("Task ETH_SD-> Shield connessa");
-		while(!Ethernet.begin(MyMac))
+		if(!Ethernet.begin(MyMac))
 		{
-			ReTryCnt--;
-			if(ReTryCnt == 0)
-			{
-				EthNotDHCP = true;
-				break;
-			}
-			EthNotDHCP = false;
-			delay(1000);
+			EthNotDHCP = true;
 		}
 		if(EthNotDHCP)
 		{
 			Ethernet.begin(MyMac, MyIp);
 			DBG("Task ETH_SD-> DHCP non trovato");
+			DBG("Task ETH_SD-> Ip:");
+			DBG(String(Ethernet.localIP()));
 		}
 		else
 			SystemFlag.EthCableConnected = true;
@@ -57,7 +61,8 @@ void CheckCableConnection()
 	if(!SystemFlag.EthClient)
 	{
 		EthernetClient ClientForCheck;
-		char *ServerName = "www.google.it";
+		const char *ServerName = "www.google.it";
+		DBG("Task Eth-SD-> Tentativo connessione");
 		if(ClientForCheck.connect(ServerName, 80))
 		{
 			SystemFlag.EthCableConnected = true;
