@@ -67,9 +67,9 @@ static void CreateSystemIcons()
 
 void setup() 
 {
+	RtcInit();
 	InitSystem();
 	LCDInit();
-	RtcInit();
 	CreateSystemIcons();
 	OSInit();
 }

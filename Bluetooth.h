@@ -10,6 +10,8 @@
 
 #endif
 
+#define INVALID_BT_HOUR	25
+
 bool BTInit(void);
 void IsBTConnected(void);
 void WriteResponse(String Response);

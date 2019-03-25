@@ -82,12 +82,12 @@ void TaskLCD(void *pvParameters)  // This is a task.
 
 	for (;;)
 	{
-		if(SystemFlag.Restart)
-		{
-			SystemFlag.Restart = false;
-			RegularScreen = false;
-			SetTime = true;
-		}
+		// if(SystemFlag.Restart)
+		// {
+			// SystemFlag.Restart = false;
+			// RegularScreen = false;
+			// SetTime = true;
+		// }
 		if(!SystemFlag.BypassNormalLcd)
 		{
 			if(!ClearLCDBT)

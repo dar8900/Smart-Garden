@@ -97,5 +97,5 @@ uint16_t ReadValue()
 	if(ReadedValue != "")
 		return ReadedValue.toInt();	
 	else 
-		return 25;
+		return INVALID_BT_HOUR;
 }

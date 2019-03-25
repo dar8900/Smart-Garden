@@ -15,6 +15,7 @@ uint16_t SecondForDimming = (SECONDS_MINUTE(TRANSITION_HOURS_DFL) / 255);
 DAY_TIME_HOURS DayTimeHours;
 CALENDAR_VAR TimeDate;
 uint16_t LogToSDPeriod;
+static bool SecondTick;
 
 const uint8_t DayForMonth[12]
 {
@@ -59,31 +60,7 @@ static void RefreshCalendar(CALENDAR_VAR *TimeToRefresh)
 	TimeToRefresh->Day = 	rtc.now().day();
 	TimeToRefresh->Month = 	rtc.now().month();
 	TimeToRefresh->Year =   rtc.now().year();
-	// if(CalendarSecond == 60)
-	// {
-		// CalendarSecond = 0;
-		// TimeToRefresh->Minute++;
-	// }
-	// if(TimeToRefresh->Minute == 60)
-	// {
-		// TimeToRefresh->Hour++;
-		// TimeToRefresh->Minute = 0;
-	// }
-	// if(TimeToRefresh->Hour == 24)
-	// {
-		// TimeToRefresh->Day++;
-		// TimeToRefresh->Hour = 0;
-	// }
-	// if(TimeToRefresh->Day == (DayForMonth[TimeToRefresh->Month] + 1))
-	// {
-		// TimeToRefresh->Month++;
-		// TimeToRefresh->Day = 0;
-	// }
-	// if(TimeToRefresh->Month == 12)
-	// {
-		// TimeToRefresh->Year++;
-		// TimeToRefresh->Month = 0;
-	// }		
+	
 }
 
 void RtcInit()
@@ -94,7 +71,7 @@ void RtcInit()
 	}
 	if (! rtc.isrunning())
 	{
-		
+		SetTimeDate(DFLT_HOUR, DFLT_MINUTE, DFLT_DAY, DFLT_MONTH, DFLT_YEAR);
 	}
 }
 
@@ -113,42 +90,48 @@ void CheckTime()
 		if(SystemFlag.SDInitialize && LogToSDPeriod < LOG_PERIOD_SD)
 			LogToSDPeriod++;
 #endif
+		SecondTick = true;
 	}
-	switch(SystemFlag.DayTime)
+	if(SecondTick)
 	{
-		// Per debug ho messo i minuti invece delle ore
-		case IN_DAY:
-			if(SecondCounter >= SECONDS_MINUTE(DayTimeHours.DayHours))
-			{
-				SecondCounter = 0;
-				SystemFlag.DayTime = TO_NIGHT;
-			}
-			break;
-		case IN_NIGHT:
-			if(SecondCounter >= SECONDS_MINUTE(DayTimeHours.NightHours))
-			{
-				SecondCounter = 0;
-				SystemFlag.DayTime = TO_DAY;
-			}	
-			break;
-		case TO_NIGHT:
-			if(SecondCounter >= SECONDS_MINUTE(DayTimeHours.TransitionHours))
-			{
-				SecondCounter = 0;
-				SystemFlag.DayTime = IN_NIGHT;
-				SystemFlag.RefreshDimming = true;
-			}	
-			break;
-		case TO_DAY:
-			if(SecondCounter >= SECONDS_MINUTE(DayTimeHours.TransitionHours))
-			{
-				SecondCounter = 0;
-				SystemFlag.DayTime = IN_DAY;
-				SystemFlag.RefreshDimming = true;
-			}	
-			break;
-		default:
-			break;		
+		switch(SystemFlag.DayTime)
+		{
+			// Per debug ho messo i minuti invece delle ore
+			case IN_DAY:
+				if(SecondCounter >= SECONDS_MINUTE(DayTimeHours.DayHours))
+				{
+					SecondCounter = 0;
+					SystemFlag.DayTime = TO_NIGHT;
+				}
+				break;
+			case IN_NIGHT:
+				if(SecondCounter >= SECONDS_MINUTE(DayTimeHours.NightHours))
+				{
+					SecondCounter = 0;
+					SystemFlag.DayTime = TO_DAY;
+				}	
+				break;
+			case TO_NIGHT:
+				if(SecondCounter >= SECONDS_MINUTE(DayTimeHours.TransitionHours))
+				{
+					SecondCounter = 0;
+					SystemFlag.DayTime = IN_NIGHT;
+					SystemFlag.RefreshDimming = true;
+				}	
+				break;
+			case TO_DAY:
+				if(SecondCounter >= SECONDS_MINUTE(DayTimeHours.TransitionHours))
+				{
+					SecondCounter = 0;
+					SystemFlag.DayTime = IN_DAY;
+					SystemFlag.RefreshDimming = true;
+				}	
+				break;
+			default:
+				break;		
+		}
+		RefreshCalendar(&TimeDate);
+		SecondTick = false;
 	}
 	if(CounterToLog == LOG_PERIOD(MINUTE_TO_LOG))
 	{
@@ -157,12 +140,7 @@ void CheckTime()
 		LogDimming();
 		LogSecondCounter();
 	}
-	RefreshCalendar(&TimeDate);
-	// if(TimeDateCounterForSave == LOG_PERIOD(60))
-	// {
-		// FlagForSave.SaveCalendar = true;
-		// TimeDateCounterForSave = 0;
-	// }
+
 }
 
 void SetTimeDate(uint8_t Hour, uint8_t Minute, uint8_t Day, uint8_t Month, uint16_t Year)
@@ -170,21 +148,3 @@ void SetTimeDate(uint8_t Hour, uint8_t Minute, uint8_t Day, uint8_t Month, uint1
 	rtc.adjust(DateTime(Year, Month, Day, Hour, Minute, 0)); // anno, mese, giorno, h ,m,s
 }
 
-// void SaveTimeDate()
-// {
-	// EEPROM.update(CALENDAR_HOUR_ADDR, TimeDate.Hour);
-	// EEPROM.update(CALENDAR_MINUTE_ADDR, TimeDate.Minute);
-	// EEPROM.update(CALENDAR_DAY_ADDR, TimeDate.Day);
-	// EEPROM.update(CALENDAR_MONTH_ADDR, TimeDate.Month);
-	// EEPROM.put(CALENDAR_YEAR_ADDR, TimeDate.Year);
-// }
-
-// void LoadTimeDate(CALENDAR_VAR *TimeDateToLoad)
-// {
-	// CalendarSecond = 0;
-	// TimeDateToLoad->Hour   = EEPROM.read(CALENDAR_HOUR_ADDR);
-	// TimeDateToLoad->Minute = EEPROM.read(CALENDAR_MINUTE_ADDR);
-	// TimeDateToLoad->Day    = EEPROM.read(CALENDAR_DAY_ADDR);
-	// TimeDateToLoad->Month  = EEPROM.read(CALENDAR_MONTH_ADDR);
-	// EEPROM.get(CALENDAR_YEAR_ADDR, TimeDateToLoad->Year);
-// }

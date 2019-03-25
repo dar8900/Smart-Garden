@@ -6,6 +6,10 @@
 
 #ifdef TASK_BT
 
+#define LIST_COMMAND_DELAY	30000
+
+#define SEND_NL	WriteResponse("");
+
 const COMMAND_RESPONSE_S PossibleCommandsResponse[MAX_CMD_RSP_VALUES]
 {
 	{"Pompa accesa: p on"         ,	 "Pompa accesa"			 ,   BT_PUMP_ON       },
@@ -34,7 +38,7 @@ static uint8_t ReadHour()
 		Hour = (uint8_t)ReadValue();
 		DBG(Hour);
 		OsDelay(100);
-	}while(Hour == 25);
+	}while(Hour == INVALID_BT_HOUR);
 	DBG(Hour);
 	return Hour; 
 }
@@ -58,27 +62,20 @@ static bool ExecuteCommand(uint8_t CmdValue)
 	switch(CmdValue)
 	{
 		case BT_PUMP_ON:
-			SystemFlag.BypassNormalLcd = true;
-			SystemFlag.BypassIgrosensorBT = true;
 			SystemFlag.ManualPumpState = PUMP_ON;
 			CmdExecuted = true;
 			break;
 		case BT_PUMP_OFF:
-			SystemFlag.BypassNormalLcd = true;
-			SystemFlag.BypassIgrosensorBT = true;
 			SystemFlag.ManualPumpState = PUMP_OFF;
 			CmdExecuted = true;
 			break;
 		case BT_LED_ON:
-			SystemFlag.BypassNormalLcd = true;
-			SystemFlag.BypassNormalDimming = true;
 			Dimming = 255;
 			SystemFlag.RefreshDimming = true;
 			CmdExecuted = true;
 			break;
 		case BT_LED_OFF:
-			SystemFlag.BypassNormalLcd = true;
-			SystemFlag.BypassNormalDimming = true;
+
 			Dimming = 0;
 			SystemFlag.RefreshDimming = true;
 			CmdExecuted = true;
@@ -139,7 +136,7 @@ void TaskBT(void *pvParameters)  // This is a task.
 	bool BTPresent = false, CmdExecuted = false, CommandFound = false;
 	String Command = "";
 	uint8_t CmdRspIndex = 0;
-	uint16_t ShowCmdListCnt = (30000/TASK_BT_DELAY);
+	uint16_t ShowCmdListCnt = (LIST_COMMAND_DELAY/TASK_BT_DELAY);
 	uint16_t LastTaskWakeTime = xTaskGetTickCount();
 	bool First = true;
 	BTPresent = BTInit();
@@ -150,6 +147,9 @@ void TaskBT(void *pvParameters)  // This is a task.
 			CheckBTConn();
 			if(SystemFlag.BTActive)
 			{
+				SystemFlag.BypassIgrosensorBT = true;
+				SystemFlag.BypassNormalLcd = true;
+				SystemFlag.BypassNormalDimming = true;
 				if(First)
 				{
 					WriteResponse("Smart Garden 001 connessa");
@@ -158,7 +158,7 @@ void TaskBT(void *pvParameters)  // This is a task.
 				if(SystemFlag.BTActive)
 				{
 					DBG("Task BT-> dispositivo connesso");
-					if(ShowCmdListCnt == (30000/TASK_BT_DELAY))
+					if(ShowCmdListCnt == (LIST_COMMAND_DELAY/TASK_BT_DELAY))
 					{
 						ShowCmdListCnt = 0;
 						WriteResponse("Lista comandi:");
