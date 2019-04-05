@@ -1,5 +1,9 @@
 #ifndef TASK_LCD_H
 #define TASK_LCD_H
 
-void TaskLCD(void *pvParameters);
+#include <stdint.h>
+
+void TaskLCD(void);
+void TaskLcdInitVar(void);
+void WaitForOk(uint8_t Row);
 #endif

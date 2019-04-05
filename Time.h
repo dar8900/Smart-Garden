@@ -2,14 +2,26 @@
 #define TIME_H
 #include <Arduino.h>
 
+#define TIMESTAMP_TO_SEC(TimeStamp)		(TimeStamp % 60)
+#define TIMESTAMP_TO_MIN(TimeStamp)     ((TimeStamp / 60) % 60)
+#define TIMESTAMP_TO_HOUR(TimeStamp)    ((TimeStamp / 3600) % 24)
+#define TIMESTAMP_TO_DAY(TimeStamp)     ((TimeStamp / 86400) % 31)
+#define TIMESTAMP_TO_MONTH(TimeStamp)   ((TimeStamp / 2678400) % 12)
+#define TIMESTAMP_TO_YEAR(TimeStamp)    (TimeStamp / 32140800)
+
+
+
 #define SEC_TO_MILLIS(s)	   (s * 1000)
+#define MINUTE_TO_MILLIS(m)    ((m * 60) * 1000)
+
+#define HOUR_IN_DAY					   24	
 
 #define SECOND_IN_MINUTE 			   60
 #define SECOND_IN_HOUR				 3600
 #define SECOND_IN_24H				86400
 
 
-#define SECONDS_HOUR(Hour)  		((SECOND_IN_24H * Hour)/24)
+#define SECONDS_HOUR(Hour)  		(Hour * SECOND_IN_HOUR)//((SECOND_IN_24H * Hour)/24)
 #define SECONDS_MINUTE(Minute)      (SECOND_IN_MINUTE * Minute)
 
 #define HOUR_SECONDS(Second)  		(Second / SECOND_IN_HOUR)
@@ -67,11 +79,13 @@ extern const uint8_t DayForMonth[];
 extern uint16_t LogToSDPeriod;
 
 void RtcInit(void);
+void RefreshCalendar(CALENDAR_VAR *TimeToRefresh);
 void CheckTime(void);
 void LogDayTime(void);
 void LogDimming(void);
 void LogSecondCounter(void);
 void SaveTimeDate(void);
 void SetTimeDate(uint8_t Hour, uint8_t Minute, uint8_t Day, uint8_t Month, uint16_t Year);
+void SecondToCalendar(CALENDAR_VAR *ToCalendar, uint32_t Second);
 void LoadTimeDate(CALENDAR_VAR *TimeDateToLoad);
 #endif

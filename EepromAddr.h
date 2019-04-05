@@ -12,6 +12,8 @@
 #define DIMMING_ADDR				4
 #define SECOND_COUNTER_ADDR			5 // 4 byte
 
+#define SECOND_DIMMING_ADDR			11 // 2	byte
+
 #define CALENDAR_HOUR_ADDR          20
 #define CALENDAR_MINUTE_ADDR		21
 #define CALENDAR_DAY_ADDR           22
@@ -28,6 +30,8 @@ typedef struct
 	bool SaveHours;
 	bool SaveDimming;
 	bool SaveSecondCouter;
+	bool SaveSecondDimming;
+	bool ClearSecondCounter;
 	// bool SaveCalendar;
 }FLAG_EEPROM;
 

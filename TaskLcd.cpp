@@ -5,6 +5,9 @@
 #include "Keyboard.h"
 #include "IgroSensor.h"
 #include "TaskBT.h"
+#include "TaskDimmingIgro.h"
+#include <EEPROM.h>
+#include "EepromAddr.h"
 
 
 #define MAX_LCD_CHARS	20
@@ -14,10 +17,13 @@
 
 #define ICONS_ROW				ONE
 #define ETH_ICON_COL			 6
-#define BT_ICON_COL				 8
-#define WHICH_HOUR_ICON_COL		10
-#define PUMP_ICON_COL			12
-#define SD_LOG_ICON_COL			14
+#define BT_ICON_COL				 7
+#define WHICH_HOUR_ICON_COL		 8 
+#define PUMP_ICON_COL			 9
+#define SD_LOG_ICON_COL			10
+
+
+
 
 const char *TimePeriod[MAX_DAY_TIME] = 
 {
@@ -49,330 +55,378 @@ const char *TimeDateStr[] =
 	"Anno",
 };
 
-#ifdef TASK_LCD
+typedef enum
+{
+	HOUR = 0,
+	MINUTE,
+	MONTH,
+	DAY,
+	YEAR,
+	MAX_SET_TIME_POS
+}SET_TIME_POSITION;
 
-char Toprint[MAX_LCD_CHARS + 1];
+static bool SetHourDay = true, SetHourTransition = false, SetHourNight = false;
+static bool ClearLCDBT = false;
+static bool ToggleEthIcon = false;
+static bool ToggleInfo = false, ToggleTempTDV = false;
+static uint8_t ActualTime = 0;
+static uint8_t DayHoursSet = 0, TotDayHours = HOUR_IN_DAY;
+static uint8_t OldDayTime = 0, OldPumpState = 0;
+static uint8_t ButtonPress = NO_PRESS;
+static uint8_t TimeDateValue[MAX_SET_TIME_POS] = {DFLT_HOUR, DFLT_MINUTE, DFLT_MONTH + 1, DFLT_DAY, DFLT_YEAR - 2000}; 
+static uint8_t MaxTimeSetValue = 23, MinTimeSetValue = 0;
+static uint8_t WichTimeStrValues = HOUR;
+static uint32_t RegularScreenCnt = 0, SwitchToTempCnt = 0;
+static uint32_t HourCalculated = 0, MinuteCalculated = 0, SecondCalculated = 0;
+static CALENDAR_VAR SecondCalendarLcd;
 
-static void WaitForOk(uint8_t Row)
+static char Toprint[MAX_LCD_CHARS + 1];
+
+void WaitForOk(uint8_t Row)
 {
 	ButtonPress = NO_PRESS;
 	while(ButtonPress != OK)
 	{
+		ButtonPress = CheckButtons();
 		LCDPrintString(Row, CENTER_ALIGN, "Premere ok...");
-		OsDelay(500);
 	}
 	ButtonPress = NO_PRESS;
 }
 
-
-void TaskLCD(void *pvParameters)  // This is a task.
+void TaskLcdInitVar()
 {
-	(void) pvParameters;
-	bool RegularScreen = true, SetHour = false, SetPump = false, SetTime = false;
-	bool SetHourDay = true, SetHourTransition = false, SetHourNight = false;
-	bool ClearLCDBT = false;
-	bool ToggleEthIcon = false;
-	uint8_t ActualTime = 0;
-	uint8_t Hours = 0, TotDayHours = 24;
-	uint8_t RegularScreenCnt = 0;
-	uint8_t TimeDateValue[5] = {0, 0, 0, 1, 19}; 
-	uint8_t MaxTimeSetValue = 23, MinTimeSetValue = 0;
-	uint8_t WichTimeStrValues = 0;
-	uint16_t LastTaskWakeTime = xTaskGetTickCount();
+	DayHoursSet = DayTimeHours.DayHours;
+}
 
-	for (;;)
+void TaskLCD()  
+{
+	switch(SystemFlag.LCD_SM)
 	{
-		// if(SystemFlag.Restart)
-		// {
-			// SystemFlag.Restart = false;
-			// RegularScreen = false;
-			// SetTime = true;
-		// }
-		if(!SystemFlag.BypassNormalLcd)
-		{
-			if(!ClearLCDBT)
+		case REGULAR_SCREEN_STATE:
+			// Disegna orario
+			snprintf(Toprint, MAX_LCD_CHARS, "%02d:%02d", TimeDate.Hour, TimeDate.Minute);
+			LCDPrintString(ONE, LEFT_ALIGN, Toprint);
+			snprintf(Toprint, MAX_LCD_CHARS, "%02d/%02d/%02d", TimeDate.Day, TimeDate.Month, TimeDate.Year % 100);
+			LCDPrintString(ONE, RIGHT_ALIGN, Toprint);
+			if(!ToggleInfo)
 			{
-				ClearLCD();
-				ClearLCDBT = true;
+				switch(SystemFlag.DayTime)
+				{
+					case IN_DAY:
+						LCDShowIcon(SUN_ICON, ICONS_ROW, WHICH_HOUR_ICON_COL);
+						break;
+					case IN_NIGHT:
+						LCDShowIcon(MOON_ICON, ICONS_ROW, WHICH_HOUR_ICON_COL);
+					default:
+						break;
+				}					
+				if(SystemFlag.DayTime != OldDayTime)
+				{
+					ClearLCDLine(THREE);
+					OldDayTime = SystemFlag.DayTime;
+				}
+				if(SystemFlag.ManualPumpState != OldPumpState)
+				{
+					ClearLCDLine(FOUR);
+					OldPumpState = SystemFlag.ManualPumpState;
+				}
+				// HourCalculated = (SecondCounter / 3600);
+				// MinuteCalculated = ((SecondCounter % 3600)/60);
+				// SecondCalculated = SecondCounter % 60;
+				if(!ToggleTempTDV)
+				{
+					SecondToCalendar(&SecondCalendarLcd, SecondCounter);
+					snprintf(Toprint, MAX_LCD_CHARS, "TdV: %02d:%02d:%02d", SecondCalendarLcd.Hour, SecondCalendarLcd.Minute, SecondCalendarLcd.Second);
+					LCDPrintString(TWO, CENTER_ALIGN, Toprint);		
+				}
+				else
+				{
+					// snprintf(Toprint, MAX_LCD_CHARS, "T:%f C  U:%4.1f %%", SensorsValues.Temperature, SensorsValues.Humidity);
+					snprintf(Toprint, MAX_LCD_CHARS, "T:%d.%dC U:%d.%d%%", (int)(SensorsValues.Temperature * 10)/10, (int)((SensorsValues.Temperature * 100)) % 10, 
+							(int)(SensorsValues.Humidity * 10)/10, (int)((SensorsValues.Humidity * 100)) % 10);
+					LCDPrintString(TWO, CENTER_ALIGN, Toprint);							
+				}
+				LCDPrintString(THREE, CENTER_ALIGN, TimePeriod[SystemFlag.DayTime]);
+				LCDPrintString(FOUR, CENTER_ALIGN, PumpState[SystemFlag.ManualPumpState]);
 			}
-			if(RegularScreen)
+			else
 			{
-				// Disegna orario
-				snprintf(Toprint, MAX_LCD_CHARS, "%02d:%02d", TimeDate.Hour, TimeDate.Minute);
-				LCDPrintString(ONE, LEFT_ALIGN, Toprint);
-				snprintf(Toprint, MAX_LCD_CHARS, "%02d/%02d/%02d", TimeDate.Hour, TimeDate.Minute, TimeDate.Year % 100);
-				LCDPrintString(ONE, RIGHT_ALIGN, Toprint);
-				if(RegularScreenCnt < REGULAR_SCREEN_REFRESH_DELAY)
-				{
-					switch(SystemFlag.DayTime)
-					{
-						case IN_DAY:
-							LCDShowIcon(SUN_ICON, ICONS_ROW, WHICH_HOUR_ICON_COL);
-							break;
-						case IN_NIGHT:
-							LCDShowIcon(MOON_ICON, ICONS_ROW, WHICH_HOUR_ICON_COL);
-						default:
-							break;
-					}					
-					LCDPrintString(THREE, LEFT_ALIGN, TimePeriod[SystemFlag.DayTime]);
-					LCDPrintString(FOUR, LEFT_ALIGN, PumpState[SystemFlag.ManualPumpState]);
-				}
-				if(RegularScreenCnt >= REGULAR_SCREEN_REFRESH_DELAY)
-				{
-					if((SystemFlag.DayTime + 1) < MAX_DAY_TIME - 1)
-						snprintf(Toprint, MAX_LCD_CHARS, "Ore per: %s", TimePeriod[SystemFlag.DayTime + 1]);
-					else
-						snprintf(Toprint, MAX_LCD_CHARS, "Ore per: %s", TimePeriod[IN_DAY]);
-					LCDPrintString(THREE, CENTER_ALIGN, Toprint);
+				if((SystemFlag.DayTime + 1) < MAX_DAY_TIME - 1)
+					snprintf(Toprint, MAX_LCD_CHARS, "Ore per: %s", TimePeriod[SystemFlag.DayTime + 1]);
+				else
+					snprintf(Toprint, MAX_LCD_CHARS, "Ore per: %s", TimePeriod[IN_DAY]);
+				LCDPrintString(THREE, CENTER_ALIGN, Toprint);
 
-					switch(SystemFlag.DayTime)
-					{
-						case IN_DAY:
-							snprintf(Toprint, MAX_LCD_CHARS, "%d%c", (SECONDS_MINUTE(DayTimeHours.DayHours) - MINUTE_SECOND(SecondCounter)), 'h');							
-							break;
-						case IN_NIGHT:
-							snprintf(Toprint, MAX_LCD_CHARS, "%d%c", (SECONDS_MINUTE(DayTimeHours.NightHours) - MINUTE_SECOND(SecondCounter)), 'h');						
-							break;
-						case TO_DAY:
-						case TO_NIGHT:
-							snprintf(Toprint, MAX_LCD_CHARS, "%d%c", (SECONDS_MINUTE(DayTimeHours.TransitionHours) - MINUTE_SECOND(SecondCounter)), 'h');
-							break;
-						default:
-							break;
-					}
-					LCDPrintString(FOUR, CENTER_ALIGN, Toprint);
-
-				}
-				switch(ButtonPress)
+				switch(SystemFlag.DayTime)
 				{
-					case UP:
-						RegularScreen = false;
-						SetPump = true;
-						ClearLCD();
+					case IN_DAY:
+						// HourCalculated = ((DayTimeHours.DayHours * 3600) - SecondCounter) / 3600;
+						// MinuteCalculated = (((DayTimeHours.DayHours * 3600) - SecondCounter) % 3600) / 60;
+						SecondToCalendar(&SecondCalendarLcd, ((DayTimeHours.DayHours * 3600) - SecondCounter));
+						snprintf(Toprint, MAX_LCD_CHARS, "%02d:%02d:%02d", SecondCalendarLcd.Hour, SecondCalendarLcd.Minute, SecondCalendarLcd.Second);							
 						break;
-					case DOWN:
-						RegularScreen = false;
-						SetTime = true;
-						ClearLCD();
+					case IN_NIGHT:
+						// HourCalculated = (DayTimeHours.NightHours - HOUR_SECONDS(SecondCounter));
+						// snprintf(Toprint, MAX_LCD_CHARS, "%02lu %s", HourCalculated, "h");		
+						SecondToCalendar(&SecondCalendarLcd, ((DayTimeHours.NightHours * 3600) - SecondCounter));	
+						snprintf(Toprint, MAX_LCD_CHARS, "%02d:%02d:%02d", SecondCalendarLcd.Hour, SecondCalendarLcd.Minute, SecondCalendarLcd.Second);							
 						break;
-					case OK:
-						RegularScreen = false;
-						SetHour = true;
-						ClearLCD();
+					case TO_DAY:
+					case TO_NIGHT:
+						// HourCalculated = (DayTimeHours.TransitionHours - HOUR_SECONDS(SecondCounter));
+						// snprintf(Toprint, MAX_LCD_CHARS, "%02lu %s", HourCalculated, "h");
+						SecondToCalendar(&SecondCalendarLcd, ((DayTimeHours.TransitionHours * 3600) - SecondCounter));	
+						snprintf(Toprint, MAX_LCD_CHARS, "%02d:%02d:%02d", SecondCalendarLcd.Hour, SecondCalendarLcd.Minute, SecondCalendarLcd.Second);
 						break;
 					default:
 						break;
 				}
-				ButtonPress = NO_PRESS;
-				RegularScreenCnt++;
-				if(RegularScreenCnt == REGULAR_SCREEN_REFRESH_DELAY)
-					ClearLCD();
-				if(RegularScreenCnt == (REGULAR_SCREEN_REFRESH_DELAY + 10))
+				LCDPrintString(FOUR, CENTER_ALIGN, Toprint);
+			}
+								
+			// Disegno icone di stato periferiche
+			if(SystemFlag.EthCableConnected)
+			{
+				if(SystemFlag.EthClient)
 				{
-					RegularScreenCnt = 0;
-					ClearLCD();
-				}
-				
-				// Disegno icone di stato periferiche
-				if(SystemFlag.EthCableConnected)
-				{
-					if(SystemFlag.EthClient)
-					{
-						if(ToggleEthIcon)
-							LCDShowIcon(ETH_ICON, ICONS_ROW, ETH_ICON_COL);
-						else
-							ClearChar(ICONS_ROW, ETH_ICON_COL);
-						ToggleEthIcon = !ToggleEthIcon;
-					}
-					else
+					if(ToggleEthIcon)
 						LCDShowIcon(ETH_ICON, ICONS_ROW, ETH_ICON_COL);
+					else
+						ClearChar(ICONS_ROW, ETH_ICON_COL);
+					ToggleEthIcon = !ToggleEthIcon;
 				}
 				else
-					ClearChar(ICONS_ROW, ETH_ICON_COL);
-				if(SystemFlag.BTActive)
-					LCDShowIcon(BT_ICON, ICONS_ROW, BT_ICON_COL);
-				else
-					ClearChar(ICONS_ROW, BT_ICON_COL);
-				if(SystemFlag.SDLogging)
-					LCDShowIcon(SD_ICON, ICONS_ROW, SD_LOG_ICON_COL);
-				else
-					ClearChar(ICONS_ROW, SD_LOG_ICON_COL);
+					LCDShowIcon(ETH_ICON, ICONS_ROW, ETH_ICON_COL);
 			}
-			else if(SetPump)
+			else
+				ClearChar(ICONS_ROW, ETH_ICON_COL);
+			if(SystemFlag.BTActive)
+				LCDShowIcon(BT_ICON, ICONS_ROW, BT_ICON_COL);
+			else
+				ClearChar(ICONS_ROW, BT_ICON_COL);
+			if(SystemFlag.SDLogging)
+				LCDShowIcon(SD_ICON, ICONS_ROW, SD_LOG_ICON_COL);
+			else
+				ClearChar(ICONS_ROW, SD_LOG_ICON_COL);
+			if(SystemFlag.ManualPumpState == PUMP_ON)
+				LCDShowIcon(PUMP_ICON, ICONS_ROW, PUMP_ICON_COL);
+			else
+				ClearChar(ICONS_ROW, PUMP_ICON_COL);
+			ButtonPress = CheckButtons();
+			switch(ButtonPress)
 			{
-				SystemFlag.BypassIgrosensor = true;
-				LCDPrintString(TWO, LEFT_ALIGN, PumpState[SystemFlag.ManualPumpState]);
-				if(SystemFlag.ManualPumpState == PUMP_ON)
-					LCDShowIcon(PUMP_ICON, ICONS_ROW, PUMP_ICON_COL);
-				else
-					ClearChar(ICONS_ROW, PUMP_ICON_COL);
-				switch(ButtonPress)
-				{
-					case UP:
-						if(SystemFlag.ManualPumpState == PUMP_ON)
-							SystemFlag.ManualPumpState = PUMP_OFF;
-						else
-							SystemFlag.ManualPumpState = PUMP_ON;
-						ClearLCDLine(TWO);
-						break;
-					case DOWN:
-						if(SystemFlag.ManualPumpState == PUMP_ON)
-							SystemFlag.ManualPumpState = PUMP_OFF;
-						else
-							SystemFlag.ManualPumpState = PUMP_ON;
-						ClearLCDLine(TWO);
-						break;
-					case OK:
-						SetPump = false;
-						SystemFlag.BypassIgrosensor = false;
-						RegularScreen = true;
+				case UP:
+					SystemFlag.LCD_SM = SET_PUMP_STATE;
+					break;
+				case DOWN:
+					SystemFlag.LCD_SM = SET_TIME_STATE;
+					break;
+				case OK:
+					SystemFlag.LCD_SM = SET_HOUR_STATE;			
+					break;
+				default:
+					break;
+			}
+			if(ButtonPress != NO_PRESS)
+				ClearLCD();
+			if(RegularScreenCnt == 0)
+			{
+				RegularScreenCnt = millis();
+			}
+			if((millis() - RegularScreenCnt) >= 15000)
+			{
+				RegularScreenCnt = 0;
+				ToggleInfo = !ToggleInfo;
+				ClearLCD();
+			}
+			if(SwitchToTempCnt == 0)
+			{
+				SwitchToTempCnt = millis();
+			}
+			if((millis() - SwitchToTempCnt) >= 5000)
+			{
+				SwitchToTempCnt = 0;
+				ToggleTempTDV = !ToggleTempTDV;
+				ClearLCDLine(TWO);
+			}
+			// Questo flag viene sempre refreshato per gestire la connessione asincrona BT
+			ClearLCDBT = true;
+			break;
+		case SET_HOUR_STATE:
+			snprintf(Toprint, MAX_LCD_CHARS, "%s%s", "Ore di:", SetTimePeriod[ActualTime]);
+			LCDPrintString(ONE, CENTER_ALIGN, Toprint);
+			snprintf(Toprint, MAX_LCD_CHARS, "%d%c", DayHoursSet, 'h');
+			LCDPrintString(TWO, CENTER_ALIGN, Toprint);
+			ButtonPress = CheckButtons();
+			switch(ButtonPress)
+			{
+				case UP:
+					if(DayHoursSet > 0)
+						DayHoursSet--;
+					else
+						DayHoursSet = TotDayHours;
+					ClearLCDLine(TWO);
+					break;
+				case DOWN:
+					if(DayHoursSet < TotDayHours)
+						DayHoursSet++;
+					else
+						DayHoursSet = 0;						
+					ClearLCDLine(TWO);
+					break;
+				case OK:
+					if(SetHourDay)
+					{
+						SetHourDay = false;
+						SetHourNight = true;
+						ActualTime++;
+						DayTimeHours.DayHours = DayHoursSet;
+						TotDayHours -= DayHoursSet;
+						DayHoursSet = DayTimeHours.NightHours;
 						ClearLCD();
-						break;
-					default:
-						break;
-				}		
-				ButtonPress = NO_PRESS;	
+					}
+					else if(SetHourNight)
+					{
+						SetHourNight = false;
+						SetHourTransition = true;	
+						ActualTime++;
+						DayTimeHours.NightHours = DayHoursSet;
+						TotDayHours -= DayHoursSet;
+						DayHoursSet = DayTimeHours.TransitionHours;
+						ClearLCD();
+					}
+					else if(SetHourTransition)
+					{
+						SetHourTransition = false;
+						SetHourDay = true;
+						ActualTime = 0;
+						DayTimeHours.TransitionHours = DayHoursSet;
+						TotDayHours = HOUR_IN_DAY;
+						DayHoursSet = DayTimeHours.DayHours;
+						SecondForDimming = (SECONDS_HOUR(DayTimeHours.TransitionHours) / 255);
+						SystemFlag.LCD_SM = REGULAR_SCREEN_STATE;
+						FlagForSave.SaveHours = true;
+						FlagForSave.SaveSecondDimming = true;
+						ClearLCD();
+					}
+					break;
+				default:
+					break;
 			}
-			else if(SetHour)
+			break;
+		case SET_PUMP_STATE:
+			SystemFlag.BypassIgrosensor = true;
+			// Disegna orario
+			snprintf(Toprint, MAX_LCD_CHARS, "%02d:%02d", TimeDate.Hour, TimeDate.Minute);
+			LCDPrintString(ONE, LEFT_ALIGN, Toprint);
+			snprintf(Toprint, MAX_LCD_CHARS, "%02d/%02d/%02d", TimeDate.Day, TimeDate.Month, TimeDate.Year % 100);
+			LCDPrintString(ONE, RIGHT_ALIGN, Toprint);	
+			// Scrive stato pompa
+			LCDPrintString(TWO, CENTER_ALIGN, PumpState[SystemFlag.ManualPumpState]);
+			if(SystemFlag.ManualPumpState == PUMP_ON)
+				LCDShowIcon(PUMP_ICON, ICONS_ROW, PUMP_ICON_COL);
+			else
+				ClearChar(ICONS_ROW, PUMP_ICON_COL);
+			ButtonPress = CheckButtons();
+			switch(ButtonPress)
 			{
-				snprintf(Toprint, MAX_LCD_CHARS, "%s%d", "Ore di:", SetTimePeriod[ActualTime]);
-				LCDPrintString(ONE, CENTER_ALIGN, Toprint);
-				snprintf(Toprint, MAX_LCD_CHARS, "%d%c", Hours, 'h');
-				LCDPrintString(TWO, CENTER_ALIGN, Toprint);
-				switch(ButtonPress)
-				{
-					case UP:
-						if(Hours > 0)
-							Hours--;
-						else
-							Hours = TotDayHours;
-						ClearLCDLine(TWO);
-						break;
-					case DOWN:
-						if(Hours < TotDayHours)
-							Hours++;
-						else
-							Hours = 0;						
-						ClearLCDLine(TWO);
-						break;
-					case OK:
-						if(SetHourDay)
-						{
-							SetHourDay = false;
-							SetHourNight = true;
-							ActualTime++;
-							DayTimeHours.DayHours = Hours;
-							TotDayHours -= Hours;
-							Hours = 0;
-							ClearLCD();
-						}
-						else if(SetHourNight)
-						{
-							SetHourNight = false;
-							SetHourTransition = true;	
-							ActualTime++;
-							DayTimeHours.NightHours = Hours;
-							TotDayHours -= Hours;
-							Hours = 0;
-							ClearLCD();
-						}
-						else if(SetHourTransition)
-						{
-							SetHourTransition = false;
-							SetHourDay = true;
-							ActualTime = 0;
-							DayTimeHours.TransitionHours = Hours;
-							TotDayHours = 24;
-							Hours = 0;
-							SetHour = false;
-							RegularScreen = true;
-							FlagForSave.SaveHours = true;
-							ClearLCD();
-						}
-						break;
-					default:
-						break;
-				}
-				ButtonPress = NO_PRESS;
-			}
-			else if(SetTime)
+				case UP:
+					if(SystemFlag.ManualPumpState == PUMP_ON)
+						SystemFlag.ManualPumpState = PUMP_OFF;
+					else
+						SystemFlag.ManualPumpState = PUMP_ON;
+					ClearLCDLine(TWO);
+					break;
+				case DOWN:
+					if(SystemFlag.ManualPumpState == PUMP_ON)
+						SystemFlag.ManualPumpState = PUMP_OFF;
+					else
+						SystemFlag.ManualPumpState = PUMP_ON;
+					ClearLCDLine(TWO);
+					break;
+				case OK:
+					SystemFlag.LCD_SM = REGULAR_SCREEN_STATE;
+					SystemFlag.BypassIgrosensor = false;
+					ClearLCD();
+					break;
+				default:
+					break;
+			}		
+			break;
+		case SET_TIME_STATE:
+			LCDPrintString(ONE, CENTER_ALIGN, "Impostare:");
+			LCDPrintString(TWO, CENTER_ALIGN, TimeDateStr[WichTimeStrValues]);
+			LCDPrintValue(THREE, CENTER_ALIGN, TimeDateValue[WichTimeStrValues]);
+			ButtonPress = CheckButtons();
+			switch(ButtonPress)
 			{
-				LCDPrintString(ONE, CENTER_ALIGN, "Imposta");
-				LCDPrintString(TWO, CENTER_ALIGN, TimeDateStr[WichTimeStrValues]);
-				LCDPrintValue(THREE, CENTER_ALIGN, TimeDateValue[WichTimeStrValues]);
-				switch(ButtonPress)
-				{
-					case UP:
-						if(TimeDateValue[WichTimeStrValues] > MinTimeSetValue)
-							TimeDateValue[WichTimeStrValues]--;
-						else
-							TimeDateValue[WichTimeStrValues] = MaxTimeSetValue;
-						ClearLCDLine(THREE);
-						break;
-					case DOWN:
-						if(TimeDateValue[WichTimeStrValues] < MaxTimeSetValue)
-							TimeDateValue[WichTimeStrValues]++;
-						else
-							TimeDateValue[WichTimeStrValues] = MinTimeSetValue;	
-						ClearLCDLine(THREE);
-						break;
-					case OK:
-						switch(WichTimeStrValues)
-						{
-							case 0: // Setto i max/min per i minuti
-								MaxTimeSetValue = 59;
-								MinTimeSetValue = 0;
-								WichTimeStrValues++;
-								ClearLCDLine(TWO);
-								ClearLCDLine(THREE);
-								break;
-							case 1: // Setto i max/min per i mesi
-								MaxTimeSetValue = 12;
-								MinTimeSetValue = 1;
-								WichTimeStrValues++;
-								ClearLCDLine(TWO);
-								ClearLCDLine(THREE);
-								break;
-							case 2: // Setto i max/min per i giorni
-								MaxTimeSetValue = DayForMonth[TimeDateValue[2] - 1];
-								MinTimeSetValue = 1;
-								WichTimeStrValues++;
-								ClearLCDLine(TWO);
-								ClearLCDLine(THREE);
-								break;
-							case 3: // Setto i max/min per gli anni
-								MaxTimeSetValue = 99;
-								MinTimeSetValue = 19;
-								WichTimeStrValues++;
-								ClearLCDLine(TWO);
-								ClearLCDLine(THREE);
-								break;
-							case 4: // Resetto i max/min per le ore
-								MaxTimeSetValue = 23;
-								MinTimeSetValue = 0;
-								WichTimeStrValues = 0;
-								SetTimeDate(TimeDateValue[0], TimeDateValue[1], TimeDateValue[3], TimeDateValue[2], TimeDateValue[4] + 2000);
-								SetTime = false;
-								RegularScreen = true;
-								ClearLCD();	
-								LCDPrintString(ONE, CENTER_ALIGN, "Ora/data impostata:");
-								snprintf(Toprint, MAX_LCD_CHARS, "%02d:%02d %02d/%02d/%04d", TimeDateValue[0], TimeDateValue[1], TimeDateValue[3], TimeDateValue[2], TimeDateValue[4] + 2000);
-								LCDPrintString(TWO, CENTER_ALIGN, Toprint);
-								WaitForOk(THREE);
-								ClearLCD();
-								break;
-							default:
-								break;						
-						}
-						break;
-					default:
-						break;
-				}		
-				ButtonPress = NO_PRESS;							
-			}
-		}
-		else
-		{
+				case UP:
+					if(TimeDateValue[WichTimeStrValues] > MinTimeSetValue)
+						TimeDateValue[WichTimeStrValues]--;
+					else
+						TimeDateValue[WichTimeStrValues] = MaxTimeSetValue;
+					ClearLCDLine(THREE);
+					break;
+				case DOWN:
+					if(TimeDateValue[WichTimeStrValues] < MaxTimeSetValue)
+						TimeDateValue[WichTimeStrValues]++;
+					else
+						TimeDateValue[WichTimeStrValues] = MinTimeSetValue;	
+					ClearLCDLine(THREE);
+					break;
+				case OK:
+					switch(WichTimeStrValues)
+					{
+						case 0: // Setto i max/min per i minuti
+							MaxTimeSetValue = 59;
+							MinTimeSetValue = 0;
+							WichTimeStrValues = MINUTE;
+							ClearLCDLine(TWO);
+							ClearLCDLine(THREE);
+							break;
+						case 1: // Setto i max/min per i mesi
+							MaxTimeSetValue = 12;
+							MinTimeSetValue = 1;
+							WichTimeStrValues = MONTH;
+							ClearLCDLine(TWO);
+							ClearLCDLine(THREE);
+							break;
+						case 2: // Setto i max/min per i giorni
+							MaxTimeSetValue = DayForMonth[TimeDateValue[2] - 1];
+							MinTimeSetValue = 1;
+							WichTimeStrValues = DAY;
+							ClearLCDLine(TWO);
+							ClearLCDLine(THREE);
+							break;
+						case 3: // Setto i max/min per gli anni
+							MaxTimeSetValue = 99;
+							MinTimeSetValue = 19;
+							WichTimeStrValues = YEAR;
+							ClearLCDLine(TWO);
+							ClearLCDLine(THREE);
+							break;
+						case 4: // Resetto i max/min per le ore
+							MaxTimeSetValue = 23;
+							MinTimeSetValue = 0;
+							WichTimeStrValues = HOUR;
+							SetTimeDate(TimeDateValue[HOUR], TimeDateValue[MINUTE], TimeDateValue[DAY], TimeDateValue[MONTH], TimeDateValue[YEAR] + 2000);
+							SystemFlag.LCD_SM = REGULAR_SCREEN_STATE;
+							ClearLCD();	
+							LCDPrintString(ONE, CENTER_ALIGN, "Ora/data impostata:");
+							snprintf(Toprint, MAX_LCD_CHARS, "%02d:%02d %02d/%02d/%04d", TimeDateValue[HOUR], TimeDateValue[MINUTE], TimeDateValue[DAY], TimeDateValue[MONTH], TimeDateValue[YEAR] + 2000);
+							LCDPrintString(TWO, CENTER_ALIGN, Toprint);
+							WaitForOk(THREE);
+							ClearLCD();
+							break;
+						default:
+							break;						
+					}
+					break;
+				default:
+					break;
+			}	
+			break;
+		case BT_LCD_STATE:
 			if(ClearLCDBT)
 			{
 				ClearLCD();
@@ -389,9 +443,10 @@ void TaskLCD(void *pvParameters)  // This is a task.
 				ClearChar(ICONS_ROW, WHICH_HOUR_ICON_COL);
 				
 			LCDPrintString(TWO, CENTER_ALIGN, "Dispositivo BT");
-			LCDPrintString(THREE, CENTER_ALIGN, "connesso");
-		}
-		OsDelayUntill(&LastTaskWakeTime, TASK_LCD_DELAY);
+			LCDPrintString(THREE, CENTER_ALIGN, "connesso");							
+			break;
+		default:
+			break;
 	}
 }
-#endif
+

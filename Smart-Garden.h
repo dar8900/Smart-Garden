@@ -1,21 +1,16 @@
 #ifndef SMART_GARDEN_H
 #define SMART_GARDEN_H
 #include <stdint.h>
-#include <Arduino_FreeRTOS.h>
-#include <EEPROM.h>
-#include <avr/pgmspace.h>
+
 #include "EepromAddr.h"
-#include "TaskSelection.h"
-
-#define OsDelay(ms)  		              vTaskDelay( ms / portTICK_PERIOD_MS ); // wait for ms second
-#define OsDelayUntill(LastWakeTime, ms)   vTaskDelayUntil(LastWakeTime ,(ms / portTICK_PERIOD_MS) ); // wait for ms second
-
 #define DBG_SERIAL	  // Opzione per attivazione debug su seriale
 
 #ifdef DBG_SERIAL
-#define DBG(Str)	Serial.println(Str)
+#define DBG(Str)	  Serial.println(Str)
+#define DBG_LINE(Str) Serial.print(Str)
 #else
 #define DBG(Str)
+#define DBG_LINE(Str) 
 #endif	
 
 typedef struct 
@@ -23,6 +18,7 @@ typedef struct
 	bool Restart;
 	uint8_t DayTime;
 	uint8_t ManualPumpState;
+	uint8_t LCD_SM;
 	bool TurnOnPumpAuto;
 	bool RefreshDimming;
 	bool SettingHours;
@@ -33,7 +29,7 @@ typedef struct
 	bool EthCableConnected;
 	bool EthClient;
 	bool BTActive;
-	bool BypassNormalLcd;
+	// bool BypassNormalLcd;
 	bool BypassNormalDimming;
 	bool BypassIgrosensorBT;
 // #ifdef TASK_ETH
@@ -50,7 +46,7 @@ typedef enum
 	OK_BUTTON   	= 24,
 	BT_LED_ACTIVE   = 25,
 	DHT_PIN         = 26,
-	PUMP        	= 27,
+	PUMP        	= 37,
 	SD_CS			= 11,
 	ETH_CS          = 10
 }PINS;
@@ -65,6 +61,17 @@ typedef enum
 	PUMP_ICON,
 	MAX_ICON
 }ICONS;
+
+typedef enum
+{
+	REGULAR_SCREEN_STATE = 0,
+	SET_HOUR_STATE,
+	SET_PUMP_STATE,
+	SET_TIME_STATE,
+	BT_LCD_STATE,
+	MAX_STATE
+	
+}LCD_STATE;
 
 extern GENERAL_FLAG SystemFlag;
 extern int16_t Dimming;

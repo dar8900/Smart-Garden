@@ -13,7 +13,6 @@ typedef enum
 	NO_PRESS
 }KEYBOARD_BUTTONS;
 
-extern uint8_t ButtonPress;
-void CheckButtons(void);
+uint8_t CheckButtons(void);
 
 #endif

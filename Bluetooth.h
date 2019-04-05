@@ -10,10 +10,10 @@
 
 #endif
 
-#define INVALID_BT_HOUR	25
+#define INVALID_BT_HOUR	100
 
 bool BTInit(void);
-void IsBTConnected(void);
+bool IsDeviceBTConnected(void);
 void WriteResponse(String Response);
 String ReadString(void);
 uint16_t ReadValue(void);

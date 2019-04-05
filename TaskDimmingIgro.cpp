@@ -6,17 +6,30 @@
 
 int16_t Dimming = 0;
 
-#ifdef TASK_DIMMING_IGROSENSORPUMP
+
+
+#define USING_IGRO	
+#define USING_DHT11
 
 #define DHTTYPE DHT11 
 
 DHT THSensor(DHT_PIN, DHTTYPE);
 SENSOR_VAR SensorsValues;
 
+void TempHydroInit()
+{
+#ifdef USING_DHT11
+	THSensor.begin();
+	delay(500);
+#endif
+}
+
+
 static void ReadFromTHSensor()
 {
 	SensorsValues.Humidity = THSensor.readHumidity();
 	SensorsValues.Temperature = THSensor.readTemperature();
+	// DBG(SensorsValues.Humidity);
 }
 
 
@@ -43,7 +56,7 @@ static void GardenLight()
 				}
 				break;
 			case TO_NIGHT:
-				if(SecondCounter % SecondForDimming)
+				if(SecondCounter % SecondForDimming == 0)
 				{
 					analogWrite(DIMMING_LED, Dimming--);
 					if(Dimming < 0)
@@ -51,7 +64,7 @@ static void GardenLight()
 				}	
 				break;
 			case TO_DAY:
-				if(SecondCounter % SecondForDimming)
+				if(SecondCounter % SecondForDimming == 0)
 				{
 					analogWrite(DIMMING_LED, Dimming++);
 					if(Dimming > 255)
@@ -74,6 +87,7 @@ static void GardenLight()
 
 static void SensorsValutation()	
 {
+#ifdef USING_IGRO
 	if(!SystemFlag.BypassIgrosensor && !SystemFlag.BypassIgrosensorBT)
 	{
 		SensorsResponse();
@@ -83,19 +97,15 @@ static void SensorsValutation()
 	{
 		PumpAction(SystemFlag.ManualPumpState);
 	}
-	ReadFromTHSensor();
-}
-
-
-void TaskDimmingLed_Igro(void *pvParameters)  // This is a task.
-{
-	(void) pvParameters;
-	THSensor.begin();
-	for (;;)
-	{
-		GardenLight();
-		SensorsValutation();
-		OsDelay(TASK_DIMMING_IGROSENSORPUMP_DELAY);
-	}
-}
 #endif
+#ifdef USING_DHT11
+	ReadFromTHSensor();
+#endif
+}
+
+
+void TaskDimmingLed_Igro()  
+{
+	GardenLight();
+	SensorsValutation();
+}

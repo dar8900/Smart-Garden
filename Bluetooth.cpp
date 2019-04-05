@@ -26,7 +26,6 @@ bool BTInit()
 {
 	DBG("TASK BT-> init");
 	String ModuleName = "AT+NAMESG-001";
-	Serial2.begin(19200);	
 	Serial2.write(ModuleName.c_str());
 	delay(1500);
 	ModuleName = "";
@@ -49,7 +48,7 @@ bool BTInit()
 	// delay(1500);	
 }
 
-void IsBTConnected()
+bool IsDeviceBTConnected()
 {
 	if(StartCntToActive == 0 && digitalRead(BT_LED_ACTIVE))
 		StartCntToActive = millis();		
@@ -66,8 +65,10 @@ void IsBTConnected()
 		if(millis() - StartCntToActive >= 1000 && BTActive)
 		{
 			StartCntToActive = 0;
-			SystemFlag.BTActive = true;
+			return true;
 		}
+		else
+			return false;
 	}
 }
 
@@ -79,23 +80,24 @@ void WriteResponse(String Response)
 
 String ReadString()
 {
-	String ReadedCommand = "";
+	String StringReaded = "";
 	while(Serial2.available())
 	{
-		ReadedCommand += char(Serial2.read());
+		StringReaded += char(Serial2.read());
 	}
-	return ReadedCommand;
+	return StringReaded;
 }
 
 uint16_t ReadValue()
 {
 	String ReadedValue = "";
+
 	while(Serial2.available())
 	{
 		ReadedValue += char(Serial2.read());
 	}
 	if(ReadedValue != "")
-		return ReadedValue.toInt();	
+		return ReadedValue.toInt();
 	else 
 		return INVALID_BT_HOUR;
 }

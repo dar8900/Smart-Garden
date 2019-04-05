@@ -12,5 +12,5 @@ typedef struct
 extern SENSOR_VAR SensorsValues;
 
 
-void TaskDimmingLed_Igro( void *pvParameters );
+void TaskDimmingLed_Igro( void );
 #endif
