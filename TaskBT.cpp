@@ -1,17 +1,18 @@
 #include "TaskBT.h"
 #include "Smart-Garden.h"
 #include "IgroSensor.h"
+#include "TaskDimmingSensors.h"
 #include "Bluetooth.h"
 #include "Time.h"
 
 
-#define BT_DEVICE_CONN_DELAY	10000
+#define BT_DEVICE_CONN_DELAY	60000
 #define TIMEOUT_USER_LIVE		 5000
 
 #define SEND_NL	WriteResponse("");
 
 static uint16_t CheckBtActiveCnt = 0;
-static bool BTPresent = false, UserNotPresentButConnected = false;
+static bool BTPresent = false, CommandReceived = false;
 static String Command = "";
 static uint8_t CmdRspIndex = 0;
 static bool First = true;
@@ -28,6 +29,8 @@ const COMMAND_RESPONSE_S PossibleCommandsResponse[MAX_CMD_RSP_VALUES]
 	{"Imposta ore giorno: dayH"   , "dayH"    ,  "Ore giorno impostate"  ,   BT_SET_DAY       },
 	{"Imposta ore notte: nightH"  , "nightH"  ,  "Ore notte impostate"   ,   BT_SET_NIGHT     },
 	{"Imposta ore di mezzo: midH" , "midH"    ,  "Ore mezzo impostate"   ,   BT_SET_MIDHOUR   },
+	{"Mostra temperatura: temp"   , "temp"    ,  "Temperatura"         	 ,   BT_SHOW_TEMP     },
+	{"Mostra umidità: umid"       , "umid"    ,  "Umidità"         		 ,   BT_SHOW_UMIDITY  },
 	{"Imposta orario: settime"    , "settime" ,  "Ora impostata"         ,   BT_SET_TIME      },
 	{"Imposta data: setdate"      , "setdate" ,  "Data impostata"        ,   BT_SET_DATE      },
 };
@@ -41,7 +44,9 @@ static String ReadCommand()
 static uint8_t ReadHour()
 {
 	uint8_t Hour = 0;
-	WriteResponse("");
+	SEND_NL;
+	WriteResponse("Inserire valore");
+
 	do
 	{
 		Hour = (uint8_t)ReadValue();
@@ -53,7 +58,7 @@ static uint8_t ReadHour()
 static uint16_t ReadTimeDate()
 {
 	uint16_t HourDate = 0;
-	WriteResponse("");
+	SEND_NL;
 	do
 	{
 		HourDate = ReadValue();
@@ -89,26 +94,33 @@ static void WriteCommandList()
 	}
 }
 
-static bool IsUserLive()
-{
-	uint16_t Cnt = 0;
-	Command = "";
-	WriteResponse("");
-	WriteResponse("Ancora connesso?");
-	while(Command == "")
-	{
-		Command == ReadCommand();
-		if(Command == "s")
-		{
-			Command = "";
-			return true;
-		}
-		Cnt++;
-		if(Cnt == TIMEOUT_USER_LIVE)
-			return false;
-		delay(1);
-	}
-}
+// static bool IsUserLive()
+// {
+	// uint16_t Cnt = 0;
+	// Command = "";
+	// WriteResponse("");
+	// WriteResponse("Ancora connesso? s o n");
+	// WriteResponse("");
+	// while(Command == "")
+	// {
+		// Command = ReadCommand();
+		// if(Command == "s")
+		// {
+			// Command = "";
+			// WriteResponse("Ciao!");
+			// WriteResponse("");
+			// return true;
+		// }
+		// Cnt++;
+		// if(Cnt == TIMEOUT_USER_LIVE)
+		// {
+			// WriteResponse("Bye");
+			// WriteResponse("");
+			// return false;
+		// }
+		// delay(1);
+	// }
+// }
 
 static bool ExecuteCommand(uint8_t CmdValue)
 {
@@ -147,7 +159,7 @@ static bool ExecuteCommand(uint8_t CmdValue)
 			else
 			{
 				CmdExecuted = false;
-				WriteResponse("");
+				SEND_NL;
 				WriteResponse("Comando non eseguito");
 				WriteResponse("Ora inserita incorretta");
 			}
@@ -162,7 +174,7 @@ static bool ExecuteCommand(uint8_t CmdValue)
 			else
 			{
 				CmdExecuted = false;
-				WriteResponse("");
+				SEND_NL;
 				WriteResponse("Comando non eseguito");
 				WriteResponse("Ora inserita incorretta");
 			}
@@ -177,23 +189,41 @@ static bool ExecuteCommand(uint8_t CmdValue)
 			else
 			{
 				CmdExecuted = false;
-				WriteResponse("");
+				SEND_NL;
 				WriteResponse("Comando non eseguito");
 				WriteResponse("Ora inserita incorretta");
 			}
 			break;
+		case BT_SHOW_TEMP:
+			{
+				String Temp;
+				SEND_NL;
+				Temp = String(SensorsValues.Temperature) + "°C";
+				WriteResponse(Temp);
+			}
+			CmdExecuted = true;
+			break;
+		case BT_SHOW_UMIDITY:
+			{
+				String Umidity;
+				SEND_NL;
+				Umidity = String(SensorsValues.Humidity) + "%";
+				WriteResponse(Umidity);
+			}
+			CmdExecuted = true;
+			break;
 		case BT_SET_TIME:
+			SEND_NL;
 			WriteResponse("Imposta l'ora");
-			WriteResponse("");
 			HourDateTime[0] = ReadTimeDate();
 			if(HourDateTime[0] > 23)
 			{
 				CmdExecuted = false;
 				break;
 			}
-			WriteResponse("");
+			SEND_NL;
 			WriteResponse("Imposta i minuti");
-			WriteResponse("");
+			SEND_NL;
 			HourDateTime[1] = ReadTimeDate();
 			if(HourDateTime[1] > 59)
 			{
@@ -204,26 +234,26 @@ static bool ExecuteCommand(uint8_t CmdValue)
 			CmdExecuted = true;
 			break;
 		case BT_SET_DATE:
+			SEND_NL;
 			WriteResponse("Imposta il mese");
-			WriteResponse("");
 			HourDateTime[0] = ReadTimeDate();
 			if(HourDateTime[0] > 12 || HourDateTime[0] < 1)
 			{
 				CmdExecuted = false;
 				break;
 			}
-			WriteResponse("");
+			SEND_NL;
 			WriteResponse("Imposta il giorno");
-			WriteResponse("");
+			SEND_NL;
 			HourDateTime[1] = ReadTimeDate();
 			if(HourDateTime[1] > DayForMonth[HourDateTime[0] - 1] || HourDateTime[1] < 1)
 			{
 				CmdExecuted = false;
 				break;
 			}
-			WriteResponse("");
+			SEND_NL;
 			WriteResponse("Imposta l'anno");
-			WriteResponse("");
+			SEND_NL;
 			HourDateTime[2] = ReadTimeDate();
 			if(HourDateTime[2] > 2099 || HourDateTime[2] < 2019)
 			{
@@ -232,7 +262,6 @@ static bool ExecuteCommand(uint8_t CmdValue)
 			}
 			SetTimeDate(TimeDate.Hour, TimeDate.Minute, (uint8_t)HourDateTime[1], (uint8_t)HourDateTime[0], HourDateTime[2]);
 			CmdExecuted = true;
-			break;
 			break;
 		default:	
 			break;
@@ -253,7 +282,7 @@ static bool CheckAndExecuteCommand()
 			CmdExecuted = ExecuteCommand(PossibleCommandsResponse[CmdRspIndex].CmdRspValue);
 			if(CmdExecuted)
 			{
-				WriteResponse("");
+				SEND_NL;
 				WriteResponse(PossibleCommandsResponse[CmdRspIndex].Response);
 			}
 			break;
@@ -261,9 +290,9 @@ static bool CheckAndExecuteCommand()
 	}
 	if(!CommandFound)
 	{
-		WriteResponse("");
+		SEND_NL;
 		WriteResponse(Command);
-		WriteResponse("");
+		SEND_NL;
 		WriteResponse("Comando non riconosciuto");
 	}
 	if(CommandFound && CmdExecuted)
@@ -276,39 +305,23 @@ void TaskBT()
 {
 	switch(BT_SM)
 	{
-		case CARD_CONNECTION_STATE:
-			if(BTInit())
-			{
-				BT_SM = DEVICE_CONNECTION_STATE;
-			}
-			else
-			{
-				BT_SM = CARD_CONNECTION_STATE;
-				First = true;
-			}
-			break;
 		case DEVICE_CONNECTION_STATE:
 			if(IsDeviceBTConnected())
 			{
 				BT_SM = CHECK_OR_SHOW_COMMAND_LIST_STATE;
-				if(!UserNotPresentButConnected)
-					SystemFlag.LCD_SM = BT_LCD_STATE;
-				else
-				{
-					UserNotPresentButConnected = false;
-					SystemFlag.LCD_SM = REGULAR_SCREEN_STATE;
-				}
 				SystemFlag.BypassIgrosensorBT = true;
 				SystemFlag.BypassNormalDimming = true;
 				SystemFlag.BTActive = true;
+				SystemFlag.LCD_SM = BT_LCD_STATE;
 			}
 			else
 			{
-				BT_SM = DEVICE_CONNECTION_STATE;
-				SystemFlag.LCD_SM = REGULAR_SCREEN_STATE;
+				BT_SM = CHECK_OR_SHOW_COMMAND_LIST_STATE;
 				SystemFlag.BypassNormalDimming = false;		
 				SystemFlag.BypassIgrosensorBT = false;	
+				SystemFlag.BTActive = false;
 				First = true;
+				SystemFlag.LCD_SM = REGULAR_SCREEN_STATE;
 			}
 			break;
 		case CHECK_OR_SHOW_COMMAND_LIST_STATE:
@@ -321,29 +334,23 @@ void TaskBT()
 			}
 			if(CommandListTime == 0)
 				CommandListTime = millis();
-			if(millis() - CommandListTime >= BT_DEVICE_CONN_DELAY)
+			if((millis() - CommandListTime >= BT_DEVICE_CONN_DELAY) && !CommandReceived)
 			{
 				CommandListTime = 0;
-				// WriteCommandList();
-				if(!IsUserLive())
-				{
-					First = true;
-					SystemFlag.BTActive = false;
-					UserNotPresentButConnected = true;
-					BT_SM = DEVICE_CONNECTION_STATE;
-				}
-				else
-				{
-					UserNotPresentButConnected = false;
-					BT_SM = CHECK_OR_SHOW_COMMAND_LIST_STATE;
-				}
+				BT_SM = DEVICE_CONNECTION_STATE;
+				First = true;
 				break;
 			}
 			else 
 			{
+				if(CommandReceived)
+					CommandReceived = false;
 				Command = ReadCommand();
 				if(Command != "")
+				{
 					BT_SM = EXECUTE_COMMAND_STATE;
+					CommandReceived = true;
+				}
 				else 
 					break;
 			}

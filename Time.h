@@ -2,12 +2,12 @@
 #define TIME_H
 #include <Arduino.h>
 
-#define TIMESTAMP_TO_SEC(TimeStamp)		(TimeStamp % 60)
-#define TIMESTAMP_TO_MIN(TimeStamp)     ((TimeStamp / 60) % 60)
-#define TIMESTAMP_TO_HOUR(TimeStamp)    ((TimeStamp / 3600) % 24)
-#define TIMESTAMP_TO_DAY(TimeStamp)     ((TimeStamp / 86400) % 31)
-#define TIMESTAMP_TO_MONTH(TimeStamp)   ((TimeStamp / 2678400) % 12)
-#define TIMESTAMP_TO_YEAR(TimeStamp)    (TimeStamp / 32140800)
+#define TIMESTAMP_TO_SEC(TimeStamp)		((TimeStamp) % 60)
+#define TIMESTAMP_TO_MIN(TimeStamp)     (((TimeStamp) / 60) % 60)
+#define TIMESTAMP_TO_HOUR(TimeStamp)    (((TimeStamp) / 3600) % 24)
+#define TIMESTAMP_TO_DAY(TimeStamp)     (((TimeStamp) / 86400) % 31)
+#define TIMESTAMP_TO_MONTH(TimeStamp)   (((TimeStamp) / 2678400) % 12)
+#define TIMESTAMP_TO_YEAR(TimeStamp)    ((TimeStamp) / 32140800)
 
 
 
@@ -47,11 +47,11 @@ typedef struct
 
 typedef struct
 {
-	uint8_t Hour;
-	uint8_t Minute;
-	uint8_t Second;
-	uint8_t Day;
-	uint8_t Month;
+	uint16_t Hour;
+	uint16_t Minute;
+	uint16_t Second;
+	uint16_t Day;
+	uint16_t Month;
 	uint16_t Year;
 }CALENDAR_VAR;
 
@@ -77,6 +77,8 @@ extern DAY_TIME_HOURS DayTimeHours;
 extern CALENDAR_VAR TimeDate;
 extern const uint8_t DayForMonth[];
 extern uint16_t LogToSDPeriod;
+extern bool SecondTick;
+extern bool DoDimming;
 
 void RtcInit(void);
 void RefreshCalendar(CALENDAR_VAR *TimeToRefresh);

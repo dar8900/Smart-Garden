@@ -6,7 +6,7 @@
 #include "TaskLcd.h"
 #include "Icons.cpp"
 #include "TaskBT.h"
-#include "TaskDimmingIgro.h"
+#include "TaskDimmingSensors.h"
 #include "TaskEeprom.h"
 
 #define TASK_BT
@@ -30,10 +30,6 @@ static void InitBluetoothCard()
 	{
 		BT_SM = DEVICE_CONNECTION_STATE;
 	}
-	else
-	{
-		BT_SM = CARD_CONNECTION_STATE;
-	}
 }
 
 
@@ -51,7 +47,11 @@ static void InitSystem()
 	pinMode(DOWN_BUTTON, INPUT);
 	pinMode(OK_BUTTON, INPUT);
 	pinMode(BT_LED_ACTIVE, INPUT);
-
+	pinMode(RED_LED, OUTPUT),
+	pinMode(YELLOW_LED, OUTPUT),
+	pinMode(GREEN_LED, OUTPUT),
+	
+	
 	SystemFlag.Restart = true;
 	
 	SystemFlag.DayTime = EEPROM.read(DAY_TIME_ADDR);

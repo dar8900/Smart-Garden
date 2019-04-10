@@ -1,4 +1,4 @@
-#include "TaskDimmingIgro.h"
+#include "TaskDimmingSensors.h"
 #include "Smart-Garden.h"
 #include "IgroSensor.h"
 #include <DHT.h>
@@ -15,13 +15,14 @@ int16_t Dimming = 0;
 
 DHT THSensor(DHT_PIN, DHTTYPE);
 SENSOR_VAR SensorsValues;
+uint8_t HygroState = HYGRO_KO;
+
+static bool DimmingDone = false;
 
 void TempHydroInit()
 {
-#ifdef USING_DHT11
 	THSensor.begin();
 	delay(500);
-#endif
 }
 
 
@@ -56,20 +57,27 @@ static void GardenLight()
 				}
 				break;
 			case TO_NIGHT:
-				if(SecondCounter % SecondForDimming == 0)
+				if(DoDimming)
 				{
+					DBG("Task Dimming-> Dimming");
+					DBG(Dimming);
 					analogWrite(DIMMING_LED, Dimming--);
 					if(Dimming < 0)
 						Dimming = 0;
+					DoDimming = false;
 				}	
+
 				break;
 			case TO_DAY:
-				if(SecondCounter % SecondForDimming == 0)
+				if(DoDimming)
 				{
 					analogWrite(DIMMING_LED, Dimming++);
 					if(Dimming > 255)
 						Dimming = 255;
+					DimmingDone = true;
 				}
+				DoDimming = true;
+				
 				break;
 			default:
 				break;			
@@ -87,25 +95,51 @@ static void GardenLight()
 
 static void SensorsValutation()	
 {
-#ifdef USING_IGRO
 	if(!SystemFlag.BypassIgrosensor && !SystemFlag.BypassIgrosensorBT)
 	{
+		ReadIgroThr();
 		SensorsResponse();
-		PumpAction(SystemFlag.TurnOnPumpAuto);
+		HygroValutation();
+		if(HygroState == HYGRO_KO)
+			SystemFlag.TurnOnPumpAuto = true; 
+		else 
+			SystemFlag.TurnOnPumpAuto = false;
 	}
-	else
-	{
-		PumpAction(SystemFlag.ManualPumpState);
-	}
-#endif
-#ifdef USING_DHT11
 	ReadFromTHSensor();
-#endif
 }
 
+static void IgroLed()
+{
+
+	switch(HygroState)
+	{
+		case HYGRO_OK:
+			digitalWrite(RED_LED, LOW);
+			digitalWrite(YELLOW_LED, LOW);
+			digitalWrite(GREEN_LED, HIGH);
+			break;
+		case HYGRO_MID:
+			digitalWrite(RED_LED, LOW);
+			digitalWrite(YELLOW_LED, HIGH);
+			digitalWrite(GREEN_LED, LOW);
+			break;
+		case HYGRO_KO:
+			digitalWrite(RED_LED, HIGH);
+			digitalWrite(YELLOW_LED, LOW);
+			digitalWrite(GREEN_LED, LOW);
+			break;
+		default:
+			break;
+	}
+}
 
 void TaskDimmingLed_Igro()  
 {
 	GardenLight();
 	SensorsValutation();
+	IgroLed();
+	if(!SystemFlag.BypassIgrosensor && !SystemFlag.BypassIgrosensorBT)
+		PumpAction(SystemFlag.TurnOnPumpAuto);
+	else
+		PumpAction(SystemFlag.ManualPumpState);
 }

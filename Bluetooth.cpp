@@ -6,6 +6,10 @@ SoftwareSerial BT(3,2); // pin 3 RX, pin 2 TX
 #define Serial2		BT
 #endif
 
+#undef CONNECTION_METHOD_1
+
+#define CONNECTION_METHOD_2
+
 /*
 Lista dei comandi HC-06:
 AT              Se la comunicazione funziona il modulo risponde OK
@@ -50,26 +54,60 @@ bool BTInit()
 
 bool IsDeviceBTConnected()
 {
-	if(StartCntToActive == 0 && digitalRead(BT_LED_ACTIVE))
-		StartCntToActive = millis();		
-
-	if(StartCntToActive > 0)
+	bool Connected = false;
+	
+#ifdef CONNECTION_METHOD_1
+	uint16_t CntLive = 3000;
+	while(!Connected)
 	{
-		if(digitalRead(BT_LED_ACTIVE))
-			BTActive = true;
-		else
+		if(StartCntToActive == 0 && digitalRead(BT_LED_ACTIVE))
+			StartCntToActive = millis();		
+
+		if(StartCntToActive > 0)
 		{
-			StartCntToActive = 0;
-			BTActive = false;
+			if(digitalRead(BT_LED_ACTIVE))
+				BTActive = true;
+			else
+			{
+				StartCntToActive = 0;
+				BTActive = false;
+			}
+			if((millis() - StartCntToActive) >= 2000 && BTActive && digitalRead(BT_LED_ACTIVE))
+			{
+				StartCntToActive = 0;
+				Connected = true;
+			}
 		}
-		if(millis() - StartCntToActive >= 1000 && BTActive)
+		CntLive--;
+		if(CntLive == 0 && !Connected)
 		{
-			StartCntToActive = 0;
-			return true;
+			break;
 		}
-		else
-			return false;
+		delay(1);
 	}
+#endif
+
+#ifdef CONNECTION_METHOD_2
+	uint16_t CntLive = 5000;
+	String Hallo = "";
+	WriteResponse("Connettersi a SG-001? Digitare 's'");
+	while(!Connected)
+	{
+		Hallo = ReadString();
+		if(Hallo == "s")
+		{
+			WriteResponse("");
+			Connected = true;
+		}
+		CntLive--;
+		if(CntLive == 0 && !Connected)
+		{
+			break;
+		}
+		delay(1);
+	}
+#endif
+	return Connected;
 }
 
 

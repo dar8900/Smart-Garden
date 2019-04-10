@@ -16,8 +16,9 @@ typedef enum
 	MAX_PUMP_STATE
 }PUMP_STATE;
 
-
+void ReadIgroThr(void);
 void SensorsResponse(void);
+void HygroValutation(void);
 void PumpAction(bool IsOn);
 
 #endif

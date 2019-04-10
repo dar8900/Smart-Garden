@@ -46,9 +46,12 @@ typedef enum
 	OK_BUTTON   	= 24,
 	BT_LED_ACTIVE   = 25,
 	DHT_PIN         = 26,
-	PUMP        	= 37,
+	PUMP        	= 27,
 	SD_CS			= 11,
-	ETH_CS          = 10
+	ETH_CS          = 10,
+	RED_LED         = 28,
+	YELLOW_LED      = 29,
+	GREEN_LED       = 30
 }PINS;
 
 typedef enum

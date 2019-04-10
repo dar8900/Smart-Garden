@@ -5,7 +5,7 @@
 #include "Keyboard.h"
 #include "IgroSensor.h"
 #include "TaskBT.h"
-#include "TaskDimmingIgro.h"
+#include "TaskDimmingSensors.h"
 #include <EEPROM.h>
 #include "EepromAddr.h"
 
@@ -81,6 +81,7 @@ static uint32_t HourCalculated = 0, MinuteCalculated = 0, SecondCalculated = 0;
 static CALENDAR_VAR SecondCalendarLcd;
 
 static char Toprint[MAX_LCD_CHARS + 1];
+static String ToPrintStr = "";
 
 void WaitForOk(uint8_t Row)
 {
@@ -130,9 +131,6 @@ void TaskLCD()
 					ClearLCDLine(FOUR);
 					OldPumpState = SystemFlag.ManualPumpState;
 				}
-				// HourCalculated = (SecondCounter / 3600);
-				// MinuteCalculated = ((SecondCounter % 3600)/60);
-				// SecondCalculated = SecondCounter % 60;
 				if(!ToggleTempTDV)
 				{
 					SecondToCalendar(&SecondCalendarLcd, SecondCounter);
@@ -142,9 +140,12 @@ void TaskLCD()
 				else
 				{
 					// snprintf(Toprint, MAX_LCD_CHARS, "T:%f C  U:%4.1f %%", SensorsValues.Temperature, SensorsValues.Humidity);
-					snprintf(Toprint, MAX_LCD_CHARS, "T:%d.%dC U:%d.%d%%", (int)(SensorsValues.Temperature * 10)/10, (int)((SensorsValues.Temperature * 100)) % 10, 
-							(int)(SensorsValues.Humidity * 10)/10, (int)((SensorsValues.Humidity * 100)) % 10);
-					LCDPrintString(TWO, CENTER_ALIGN, Toprint);							
+					// snprintf(Toprint, MAX_LCD_CHARS, "T:%d.%dC U:%d.%d%%", (int)(SensorsValues.Temperature * 10)/10, (int)((SensorsValues.Temperature * 10)) % 10, 
+							// (int)(SensorsValues.Humidity * 10)/10, (int)((SensorsValues.Humidity * 10)) % 10);
+					ToPrintStr = "T: " + String(SensorsValues.Temperature) + "C";
+					LCDPrintString(TWO, LEFT_ALIGN, ToPrintStr.c_str());
+					ToPrintStr = "U: " + String(SensorsValues.Humidity) + "%";
+					LCDPrintString(TWO, RIGHT_ALIGN, ToPrintStr.c_str());
 				}
 				LCDPrintString(THREE, CENTER_ALIGN, TimePeriod[SystemFlag.DayTime]);
 				LCDPrintString(FOUR, CENTER_ALIGN, PumpState[SystemFlag.ManualPumpState]);
@@ -160,22 +161,22 @@ void TaskLCD()
 				switch(SystemFlag.DayTime)
 				{
 					case IN_DAY:
-						// HourCalculated = ((DayTimeHours.DayHours * 3600) - SecondCounter) / 3600;
-						// MinuteCalculated = (((DayTimeHours.DayHours * 3600) - SecondCounter) % 3600) / 60;
-						SecondToCalendar(&SecondCalendarLcd, ((DayTimeHours.DayHours * 3600) - SecondCounter));
+						SecondCalculated = ((DayTimeHours.DayHours * 3600) - SecondCounter);
+						SecondToCalendar(&SecondCalendarLcd, SecondCalculated);
+						// ToPrintStr = String(SecondCalendarLcd.Hour) + ":" + String(SecondCalendarLcd.Minute) + ":" + String(SecondCalendarLcd.Second);
 						snprintf(Toprint, MAX_LCD_CHARS, "%02d:%02d:%02d", SecondCalendarLcd.Hour, SecondCalendarLcd.Minute, SecondCalendarLcd.Second);							
 						break;
 					case IN_NIGHT:
-						// HourCalculated = (DayTimeHours.NightHours - HOUR_SECONDS(SecondCounter));
-						// snprintf(Toprint, MAX_LCD_CHARS, "%02lu %s", HourCalculated, "h");		
-						SecondToCalendar(&SecondCalendarLcd, ((DayTimeHours.NightHours * 3600) - SecondCounter));	
+						SecondCalculated = ((DayTimeHours.NightHours * 3600) - SecondCounter);
+						SecondToCalendar(&SecondCalendarLcd, SecondCalculated);	
+						// ToPrintStr = String(SecondCalendarLcd.Hour) + ":" + String(SecondCalendarLcd.Minute) + ":" + String(SecondCalendarLcd.Second);
 						snprintf(Toprint, MAX_LCD_CHARS, "%02d:%02d:%02d", SecondCalendarLcd.Hour, SecondCalendarLcd.Minute, SecondCalendarLcd.Second);							
 						break;
 					case TO_DAY:
 					case TO_NIGHT:
-						// HourCalculated = (DayTimeHours.TransitionHours - HOUR_SECONDS(SecondCounter));
-						// snprintf(Toprint, MAX_LCD_CHARS, "%02lu %s", HourCalculated, "h");
-						SecondToCalendar(&SecondCalendarLcd, ((DayTimeHours.TransitionHours * 3600) - SecondCounter));	
+						SecondCalculated = ((DayTimeHours.TransitionHours * 3600) - SecondCounter);
+						SecondToCalendar(&SecondCalendarLcd, SecondCalculated);	
+						// ToPrintStr = String(SecondCalendarLcd.Hour) + ":" + String(SecondCalendarLcd.Minute) + ":" + String(SecondCalendarLcd.Second);
 						snprintf(Toprint, MAX_LCD_CHARS, "%02d:%02d:%02d", SecondCalendarLcd.Hour, SecondCalendarLcd.Minute, SecondCalendarLcd.Second);
 						break;
 					default:
@@ -184,34 +185,35 @@ void TaskLCD()
 				LCDPrintString(FOUR, CENTER_ALIGN, Toprint);
 			}
 								
-			// Disegno icone di stato periferiche
+			/* DISEGNO ICONE DI STATO PERIFERICHE */
+			// Icona Eth
 			if(SystemFlag.EthCableConnected)
 			{
 				if(SystemFlag.EthClient)
 				{
-					if(ToggleEthIcon)
-						LCDShowIcon(ETH_ICON, ICONS_ROW, ETH_ICON_COL);
-					else
-						ClearChar(ICONS_ROW, ETH_ICON_COL);
-					ToggleEthIcon = !ToggleEthIcon;
+					LCDShowIcon(ETH_ICON, ICONS_ROW, ETH_ICON_COL);
 				}
 				else
 					LCDShowIcon(ETH_ICON, ICONS_ROW, ETH_ICON_COL);
 			}
 			else
 				ClearChar(ICONS_ROW, ETH_ICON_COL);
+			// Icona BT
 			if(SystemFlag.BTActive)
 				LCDShowIcon(BT_ICON, ICONS_ROW, BT_ICON_COL);
 			else
 				ClearChar(ICONS_ROW, BT_ICON_COL);
+			// Icona SD
 			if(SystemFlag.SDLogging)
 				LCDShowIcon(SD_ICON, ICONS_ROW, SD_LOG_ICON_COL);
 			else
 				ClearChar(ICONS_ROW, SD_LOG_ICON_COL);
+			// Icona pompa
 			if(SystemFlag.ManualPumpState == PUMP_ON)
 				LCDShowIcon(PUMP_ICON, ICONS_ROW, PUMP_ICON_COL);
 			else
 				ClearChar(ICONS_ROW, PUMP_ICON_COL);
+			
 			ButtonPress = CheckButtons();
 			switch(ButtonPress)
 			{

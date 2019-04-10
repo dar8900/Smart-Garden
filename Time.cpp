@@ -22,7 +22,8 @@ uint16_t SecondForDimming;
 DAY_TIME_HOURS DayTimeHours;
 CALENDAR_VAR TimeDate;
 uint16_t LogToSDPeriod;
-static bool SecondTick;
+bool SecondTick;
+bool DoDimming = false;
 
 const uint8_t DayForMonth[12]
 {
@@ -158,6 +159,10 @@ void CheckTime()
 #ifndef FAST_TIME
 		RefreshCalendar(&TimeDate);
 #endif
+
+		if((SystemFlag.DayTime == TO_NIGHT || SystemFlag.DayTime == TO_NIGHT) && (SecondCounter % SecondForDimming == 0))
+			DoDimming = true;
+
 		SecondTick = false;
 	}
 	if(CounterToLog == LOG_PERIOD(MINUTE_TO_LOG))
