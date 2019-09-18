@@ -13,13 +13,17 @@
 #define DBG_LINE(Str) 
 #endif	
 
+#define IS_ON 	true
+#define IS_OFF	false
+
 typedef struct 
 {
 	bool Restart;
 	uint8_t DayTime;
-	uint8_t ManualPumpState;
 	uint8_t LCD_SM;
 	bool TurnOnPumpAuto;
+	bool ManualPumpState;
+	bool PumpState;
 	bool RefreshDimming;
 	bool SettingHours;
 	bool BypassIgrosensor;
@@ -40,18 +44,22 @@ typedef struct
 
 typedef enum
 {
-	DIMMING_LED 	= 3,	
-	UP_BUTTON   	= 22,
-	DOWN_BUTTON 	= 23,
-	OK_BUTTON   	= 24,
-	BT_LED_ACTIVE   = 25,
-	DHT_PIN         = 26,
-	PUMP        	= 27,
-	SD_CS			= 11,
-	ETH_CS          = 10,
-	RED_LED         = 28,
-	YELLOW_LED      = 29,
-	GREEN_LED       = 30
+	BT_LED_ACTIVE   	=  2,
+	DIMMING_RED_LED 	=  3,	
+	DIMMING_BLUE_LED 	=  4,
+	DIMMING_GREEN_LED 	=  5,
+	UP_BUTTON   		= 22,
+	DOWN_BUTTON 		= 23,
+	OK_BUTTON   		= 24,
+	DHT_PIN         	= 26,
+	PUMP        		= 27,
+	SD_CS				= 11,
+	ETH_CS          	= 10,
+	RED_LED         	= 28,
+	YELLOW_LED      	= 29,
+	GREEN_LED       	= 30,
+	RESET_EXIT_BUTTON   = 31,
+	RESET_PIN			= 32
 }PINS;
 
 typedef enum
@@ -61,6 +69,7 @@ typedef enum
 	ETH_ICON,
 	SUN_ICON,
 	MOON_ICON,
+	MID_HOUR_ICON,
 	PUMP_ICON,
 	MAX_ICON
 }ICONS;
@@ -71,6 +80,7 @@ typedef enum
 	SET_HOUR_STATE,
 	SET_PUMP_STATE,
 	SET_TIME_STATE,
+	RESET_STATE,
 	BT_LCD_STATE,
 	MAX_STATE
 	

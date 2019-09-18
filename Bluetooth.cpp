@@ -6,9 +6,12 @@ SoftwareSerial BT(3,2); // pin 3 RX, pin 2 TX
 #define Serial2		BT
 #endif
 
-#undef CONNECTION_METHOD_1
 
-#define CONNECTION_METHOD_2
+
+#ifdef CONNECTION_METHOD_3
+volatile uint32_t InterruptCounter = 1;
+uint32_t OldInterruptCounter;
+#endif
 
 /*
 Lista dei comandi HC-06:
@@ -52,6 +55,7 @@ bool BTInit()
 	// delay(1500);	
 }
 
+#ifndef CONNECTION_METHOD_3
 bool IsDeviceBTConnected()
 {
 	bool Connected = false;
@@ -109,6 +113,21 @@ bool IsDeviceBTConnected()
 #endif
 	return Connected;
 }
+
+#else // ifndef CONNECTION_METHOD_3
+
+void IsDeviceBTConnected()
+{
+	InterruptCounter++;
+	if(InterruptCounter >= 4294967290)
+	{
+		InterruptCounter = 1;
+		OldInterruptCounter = 0;
+	}
+}
+
+#endif // ifndef CONNECTION_METHOD_3
+
 
 
 void WriteResponse(String Response)

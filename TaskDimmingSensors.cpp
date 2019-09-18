@@ -6,12 +6,13 @@
 
 int16_t Dimming = 0;
 
-
+int16_t DimmingRedBT, DimmingBlueBT;
 
 #define USING_IGRO	
 #define USING_DHT11
 
-#define DHTTYPE DHT11 
+#define DHTTYPE DHT11
+
 
 DHT THSensor(DHT_PIN, DHTTYPE);
 SENSOR_VAR SensorsValues;
@@ -43,41 +44,46 @@ static void GardenLight()
 			case IN_DAY:
 				if(SystemFlag.RefreshDimming)
 				{
-					Dimming = 255;
-					analogWrite(DIMMING_LED, Dimming);
+					Dimming = MAX_DIMMING;
+					analogWrite(DIMMING_RED_LED, Dimming);
+					analogWrite(DIMMING_BLUE_LED, Dimming);
 					SystemFlag.RefreshDimming = false;
 				}
 				break;
 			case IN_NIGHT:
 				if(SystemFlag.RefreshDimming)
 				{
-					Dimming = 0;
-					analogWrite(DIMMING_LED, Dimming);
+					Dimming = MIN_DIMMING;
+					analogWrite(DIMMING_RED_LED, Dimming);
+					analogWrite(DIMMING_BLUE_LED, Dimming);
 					SystemFlag.RefreshDimming = false;
 				}
 				break;
 			case TO_NIGHT:
 				if(DoDimming)
 				{
+					if(Dimming > MIN_DIMMING)
+						Dimming--;
+					else
+						Dimming = MIN_DIMMING;
 					DBG("Task Dimming-> Dimming");
 					DBG(Dimming);
-					analogWrite(DIMMING_LED, Dimming--);
-					if(Dimming < 0)
-						Dimming = 0;
+					analogWrite(DIMMING_RED_LED, Dimming);
+					analogWrite(DIMMING_BLUE_LED, 0);
 					DoDimming = false;
 				}	
-
 				break;
 			case TO_DAY:
 				if(DoDimming)
 				{
-					analogWrite(DIMMING_LED, Dimming++);
-					if(Dimming > 255)
-						Dimming = 255;
-					DimmingDone = true;
-				}
-				DoDimming = true;
-				
+					if(Dimming < MAX_DIMMING)
+						Dimming++;
+					else
+						Dimming = MAX_DIMMING;
+					analogWrite(DIMMING_RED_LED, 0);
+					analogWrite(DIMMING_BLUE_LED, Dimming);
+					DoDimming = false;
+				}		
 				break;
 			default:
 				break;			
@@ -87,7 +93,8 @@ static void GardenLight()
 	{
 		if(SystemFlag.RefreshDimming)
 		{
-			analogWrite(DIMMING_LED, Dimming);		
+			analogWrite(DIMMING_RED_LED, DimmingRedBT);
+			analogWrite(DIMMING_BLUE_LED, DimmingBlueBT);		
 			SystemFlag.RefreshDimming = false;
 		}
 	}	
@@ -110,26 +117,34 @@ static void SensorsValutation()
 
 static void IgroLed()
 {
-
-	switch(HygroState)
+	if(!SystemFlag.BypassIgrosensor && !SystemFlag.BypassIgrosensorBT)
 	{
-		case HYGRO_OK:
-			digitalWrite(RED_LED, LOW);
-			digitalWrite(YELLOW_LED, LOW);
-			digitalWrite(GREEN_LED, HIGH);
-			break;
-		case HYGRO_MID:
-			digitalWrite(RED_LED, LOW);
-			digitalWrite(YELLOW_LED, HIGH);
-			digitalWrite(GREEN_LED, LOW);
-			break;
-		case HYGRO_KO:
-			digitalWrite(RED_LED, HIGH);
-			digitalWrite(YELLOW_LED, LOW);
-			digitalWrite(GREEN_LED, LOW);
-			break;
-		default:
-			break;
+		switch(HygroState)
+		{
+			case HYGRO_OK:
+				digitalWrite(RED_LED, LOW);
+				digitalWrite(YELLOW_LED, LOW);
+				digitalWrite(GREEN_LED, HIGH);
+				break;
+			case HYGRO_MID:
+				digitalWrite(RED_LED, LOW);
+				digitalWrite(YELLOW_LED, HIGH);
+				digitalWrite(GREEN_LED, LOW);
+				break;
+			case HYGRO_KO:
+				digitalWrite(RED_LED, HIGH);
+				digitalWrite(YELLOW_LED, LOW);
+				digitalWrite(GREEN_LED, LOW);
+				break;
+			default:
+				break;
+		}
+	}
+	else
+	{
+		digitalWrite(RED_LED, LOW);
+		digitalWrite(YELLOW_LED, LOW);
+		digitalWrite(GREEN_LED, LOW);		
 	}
 }
 

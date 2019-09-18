@@ -22,7 +22,11 @@
 #define PUMP_ICON_COL			 9
 #define SD_LOG_ICON_COL			10
 
-
+enum
+{
+	YES = 0,
+	NO
+};
 
 
 const char *TimePeriod[MAX_DAY_TIME] = 
@@ -55,6 +59,12 @@ const char *TimeDateStr[] =
 	"Anno",
 };
 
+const char *YesNo[] = 
+{
+	"Si",
+	"No",
+};
+
 typedef enum
 {
 	HOUR = 0,
@@ -65,13 +75,17 @@ typedef enum
 	MAX_SET_TIME_POS
 }SET_TIME_POSITION;
 
+extern uint8_t	HourLeft;
+
 static bool SetHourDay = true, SetHourTransition = false, SetHourNight = false;
 static bool ClearLCDBT = false;
 static bool ToggleEthIcon = false;
 static bool ToggleInfo = false, ToggleTempTDV = false;
+static bool FirstEntry = true;
 static uint8_t ActualTime = 0;
 static uint8_t DayHoursSet = 0, TotDayHours = HOUR_IN_DAY;
 static uint8_t OldDayTime = 0, OldPumpState = 0;
+static uint8_t YesNoStr;
 static uint8_t ButtonPress = NO_PRESS;
 static uint8_t TimeDateValue[MAX_SET_TIME_POS] = {DFLT_HOUR, DFLT_MINUTE, DFLT_MONTH + 1, DFLT_DAY, DFLT_YEAR - 2000}; 
 static uint8_t MaxTimeSetValue = 23, MinTimeSetValue = 0;
@@ -101,6 +115,11 @@ void TaskLcdInitVar()
 
 void TaskLCD()  
 {
+	if(FirstEntry)
+	{
+		FirstEntry = false;
+		ClearLCD();
+	}
 	switch(SystemFlag.LCD_SM)
 	{
 		case REGULAR_SCREEN_STATE:
@@ -118,6 +137,11 @@ void TaskLCD()
 						break;
 					case IN_NIGHT:
 						LCDShowIcon(MOON_ICON, ICONS_ROW, WHICH_HOUR_ICON_COL);
+						break;
+					case TO_DAY:
+					case TO_NIGHT:
+						LCDShowIcon(MID_HOUR_ICON, ICONS_ROW, WHICH_HOUR_ICON_COL);
+						break;
 					default:
 						break;
 				}					
@@ -126,22 +150,18 @@ void TaskLCD()
 					ClearLCDLine(THREE);
 					OldDayTime = SystemFlag.DayTime;
 				}
-				if(SystemFlag.ManualPumpState != OldPumpState)
+				if(SystemFlag.PumpState != OldPumpState)
 				{
 					ClearLCDLine(FOUR);
-					OldPumpState = SystemFlag.ManualPumpState;
+					OldPumpState = SystemFlag.PumpState;
 				}
 				if(!ToggleTempTDV)
 				{
-					SecondToCalendar(&SecondCalendarLcd, SecondCounter);
-					snprintf(Toprint, MAX_LCD_CHARS, "TdV: %02d:%02d:%02d", SecondCalendarLcd.Hour, SecondCalendarLcd.Minute, SecondCalendarLcd.Second);
+					snprintf(Toprint, MAX_LCD_CHARS, "T.T.: %02d:%02d:%02d", TimeInLive.Hour, TimeInLive.Minute, TimeInLive.Second);
 					LCDPrintString(TWO, CENTER_ALIGN, Toprint);		
 				}
 				else
 				{
-					// snprintf(Toprint, MAX_LCD_CHARS, "T:%f C  U:%4.1f %%", SensorsValues.Temperature, SensorsValues.Humidity);
-					// snprintf(Toprint, MAX_LCD_CHARS, "T:%d.%dC U:%d.%d%%", (int)(SensorsValues.Temperature * 10)/10, (int)((SensorsValues.Temperature * 10)) % 10, 
-							// (int)(SensorsValues.Humidity * 10)/10, (int)((SensorsValues.Humidity * 10)) % 10);
 					ToPrintStr = "T: " + String(SensorsValues.Temperature) + "C";
 					LCDPrintString(TWO, LEFT_ALIGN, ToPrintStr.c_str());
 					ToPrintStr = "U: " + String(SensorsValues.Humidity) + "%";
@@ -152,36 +172,17 @@ void TaskLCD()
 			}
 			else
 			{
-				if((SystemFlag.DayTime + 1) < MAX_DAY_TIME - 1)
+				if(OldDayTime != SystemFlag.DayTime)
+				{
+					OldDayTime = SystemFlag.DayTime;
+					ClearLCDLine(THREE);
+				}
+				if((SystemFlag.DayTime + 1) <= MAX_DAY_TIME - 1)
 					snprintf(Toprint, MAX_LCD_CHARS, "Ore per: %s", TimePeriod[SystemFlag.DayTime + 1]);
 				else
 					snprintf(Toprint, MAX_LCD_CHARS, "Ore per: %s", TimePeriod[IN_DAY]);
 				LCDPrintString(THREE, CENTER_ALIGN, Toprint);
-
-				switch(SystemFlag.DayTime)
-				{
-					case IN_DAY:
-						SecondCalculated = ((DayTimeHours.DayHours * 3600) - SecondCounter);
-						SecondToCalendar(&SecondCalendarLcd, SecondCalculated);
-						// ToPrintStr = String(SecondCalendarLcd.Hour) + ":" + String(SecondCalendarLcd.Minute) + ":" + String(SecondCalendarLcd.Second);
-						snprintf(Toprint, MAX_LCD_CHARS, "%02d:%02d:%02d", SecondCalendarLcd.Hour, SecondCalendarLcd.Minute, SecondCalendarLcd.Second);							
-						break;
-					case IN_NIGHT:
-						SecondCalculated = ((DayTimeHours.NightHours * 3600) - SecondCounter);
-						SecondToCalendar(&SecondCalendarLcd, SecondCalculated);	
-						// ToPrintStr = String(SecondCalendarLcd.Hour) + ":" + String(SecondCalendarLcd.Minute) + ":" + String(SecondCalendarLcd.Second);
-						snprintf(Toprint, MAX_LCD_CHARS, "%02d:%02d:%02d", SecondCalendarLcd.Hour, SecondCalendarLcd.Minute, SecondCalendarLcd.Second);							
-						break;
-					case TO_DAY:
-					case TO_NIGHT:
-						SecondCalculated = ((DayTimeHours.TransitionHours * 3600) - SecondCounter);
-						SecondToCalendar(&SecondCalendarLcd, SecondCalculated);	
-						// ToPrintStr = String(SecondCalendarLcd.Hour) + ":" + String(SecondCalendarLcd.Minute) + ":" + String(SecondCalendarLcd.Second);
-						snprintf(Toprint, MAX_LCD_CHARS, "%02d:%02d:%02d", SecondCalendarLcd.Hour, SecondCalendarLcd.Minute, SecondCalendarLcd.Second);
-						break;
-					default:
-						break;
-				}
+				snprintf(Toprint, MAX_LCD_CHARS, "%02dh", HourLeft);
 				LCDPrintString(FOUR, CENTER_ALIGN, Toprint);
 			}
 								
@@ -209,7 +210,7 @@ void TaskLCD()
 			else
 				ClearChar(ICONS_ROW, SD_LOG_ICON_COL);
 			// Icona pompa
-			if(SystemFlag.ManualPumpState == PUMP_ON)
+			if(SystemFlag.PumpState == IS_ON)
 				LCDShowIcon(PUMP_ICON, ICONS_ROW, PUMP_ICON_COL);
 			else
 				ClearChar(ICONS_ROW, PUMP_ICON_COL);
@@ -226,31 +227,28 @@ void TaskLCD()
 				case OK:
 					SystemFlag.LCD_SM = SET_HOUR_STATE;			
 					break;
+				case RESET_EXIT:
+					SystemFlag.LCD_SM = RESET_STATE;	
+					ClearLCD();
+					break;
 				default:
 					break;
 			}
 			if(ButtonPress != NO_PRESS)
 				ClearLCD();
-			if(RegularScreenCnt == 0)
-			{
-				RegularScreenCnt = millis();
-			}
-			if((millis() - RegularScreenCnt) >= 15000)
+			if(TakeSecondDelayTime(&RegularScreenCnt, 15))
 			{
 				RegularScreenCnt = 0;
 				ToggleInfo = !ToggleInfo;
-				ClearLCD();
+				ClearLCD();				
 			}
-			if(SwitchToTempCnt == 0)
-			{
-				SwitchToTempCnt = millis();
-			}
-			if((millis() - SwitchToTempCnt) >= 5000)
+			if(TakeSecondDelayTime(&SwitchToTempCnt, 5))
 			{
 				SwitchToTempCnt = 0;
 				ToggleTempTDV = !ToggleTempTDV;
-				ClearLCDLine(TWO);
+				ClearLCDLine(TWO);				
 			}
+
 			// Questo flag viene sempre refreshato per gestire la connessione asincrona BT
 			ClearLCDBT = true;
 			break;
@@ -309,8 +307,25 @@ void TaskLCD()
 						SystemFlag.LCD_SM = REGULAR_SCREEN_STATE;
 						FlagForSave.SaveHours = true;
 						FlagForSave.SaveSecondDimming = true;
+						switch(SystemFlag.DayTime)
+						{
+							case IN_DAY:
+								HourLeft = DayTimeHours.DayHours;
+								break;
+							case TO_NIGHT:
+							case TO_DAY:
+								HourLeft = DayTimeHours.TransitionHours;
+								break;
+							case IN_NIGHT:
+								HourLeft = DayTimeHours.NightHours;
+								break;
+							default:
+								break;
+						}
 						ClearLCD();
 					}
+					break;
+				case RESET_EXIT:			
 					break;
 				default:
 					break;
@@ -325,7 +340,7 @@ void TaskLCD()
 			LCDPrintString(ONE, RIGHT_ALIGN, Toprint);	
 			// Scrive stato pompa
 			LCDPrintString(TWO, CENTER_ALIGN, PumpState[SystemFlag.ManualPumpState]);
-			if(SystemFlag.ManualPumpState == PUMP_ON)
+			if(SystemFlag.ManualPumpState == IS_ON)
 				LCDShowIcon(PUMP_ICON, ICONS_ROW, PUMP_ICON_COL);
 			else
 				ClearChar(ICONS_ROW, PUMP_ICON_COL);
@@ -333,23 +348,25 @@ void TaskLCD()
 			switch(ButtonPress)
 			{
 				case UP:
-					if(SystemFlag.ManualPumpState == PUMP_ON)
-						SystemFlag.ManualPumpState = PUMP_OFF;
+					if(SystemFlag.ManualPumpState == IS_ON)
+						SystemFlag.ManualPumpState = IS_OFF;
 					else
-						SystemFlag.ManualPumpState = PUMP_ON;
+						SystemFlag.ManualPumpState = IS_ON;
 					ClearLCDLine(TWO);
 					break;
 				case DOWN:
-					if(SystemFlag.ManualPumpState == PUMP_ON)
-						SystemFlag.ManualPumpState = PUMP_OFF;
+					if(SystemFlag.ManualPumpState == IS_ON)
+						SystemFlag.ManualPumpState = IS_OFF;
 					else
-						SystemFlag.ManualPumpState = PUMP_ON;
+						SystemFlag.ManualPumpState = IS_ON;
 					ClearLCDLine(TWO);
 					break;
 				case OK:
 					SystemFlag.LCD_SM = REGULAR_SCREEN_STATE;
 					SystemFlag.BypassIgrosensor = false;
 					ClearLCD();
+					break;
+				case RESET_EXIT:			
 					break;
 				default:
 					break;
@@ -424,9 +441,51 @@ void TaskLCD()
 							break;						
 					}
 					break;
+				case RESET_EXIT:			
+					break;
 				default:
 					break;
 			}	
+			break;
+		case RESET_STATE:
+			LCDPrintString(ONE, CENTER_ALIGN, "Impostare valori");
+			LCDPrintString(TWO, CENTER_ALIGN, "di default?");
+			LCDPrintString(THREE, CENTER_ALIGN, YesNo[YesNoStr]);
+			ButtonPress = CheckButtons();
+			switch(ButtonPress)
+			{
+				case UP:
+					if(YesNoStr == YES)
+						YesNoStr = NO;
+					else
+						YesNoStr = YES;
+					break;
+				case DOWN:
+					if(YesNoStr == NO)
+						YesNoStr = YES;
+					else
+						YesNoStr = NO;
+					break;
+				case OK:	
+					if(YesNoStr == YES)
+					{
+						EEPROM.write(DAY_TIME_ADDR, 255);
+						ClearLCD();
+						LCDPrintString(TWO, CENTER_ALIGN, "Reset in corso...");
+						delay(2000);
+						digitalWrite(RESET_PIN, LOW);
+					}
+					else
+					{
+						ClearLCD();
+						SystemFlag.LCD_SM = REGULAR_SCREEN_STATE;
+					}
+					break;
+				case RESET_EXIT:			
+					break;
+				default:
+					break;
+			}			
 			break;
 		case BT_LCD_STATE:
 			if(ClearLCDBT)
@@ -434,16 +493,22 @@ void TaskLCD()
 				ClearLCD();
 				ClearLCDBT = false;
 			}
+			// Disegna orario
+			snprintf(Toprint, MAX_LCD_CHARS, "%02d:%02d", TimeDate.Hour, TimeDate.Minute);
+			LCDPrintString(ONE, LEFT_ALIGN, Toprint);
+			snprintf(Toprint, MAX_LCD_CHARS, "%02d/%02d/%02d", TimeDate.Day, TimeDate.Month, TimeDate.Year % 100);
+			LCDPrintString(ONE, RIGHT_ALIGN, Toprint);
 			LCDShowIcon(BT_ICON, ICONS_ROW, BT_ICON_COL);
-			if(SystemFlag.ManualPumpState == PUMP_ON)
+			if(SystemFlag.PumpState == IS_ON)
 				LCDShowIcon(PUMP_ICON, ICONS_ROW, PUMP_ICON_COL);
 			else
 				ClearChar(ICONS_ROW, PUMP_ICON_COL);
 			if(Dimming == 255)
 				LCDShowIcon(SUN_ICON, ICONS_ROW, WHICH_HOUR_ICON_COL);
+			else if(Dimming == 0)
+				LCDShowIcon(MOON_ICON, ICONS_ROW, WHICH_HOUR_ICON_COL);
 			else
-				ClearChar(ICONS_ROW, WHICH_HOUR_ICON_COL);
-				
+				LCDShowIcon(MID_HOUR_ICON, ICONS_ROW, WHICH_HOUR_ICON_COL);
 			LCDPrintString(TWO, CENTER_ALIGN, "Dispositivo BT");
 			LCDPrintString(THREE, CENTER_ALIGN, "connesso");							
 			break;

@@ -2,6 +2,9 @@
 #define TASK_DIMMING_IGRO_H
 #include <Arduino.h>
 
+#define MAX_DIMMING 	255
+#define MIN_DIMMING		  0
+
 typedef struct
 {
 	float Temperature;

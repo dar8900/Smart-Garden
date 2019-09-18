@@ -81,11 +81,11 @@ void PumpAction(bool IsOn)
 	if(IsOn)
 	{
 		digitalWrite(PUMP, HIGH);
-		SystemFlag.ManualPumpState = PUMP_ON;
+		SystemFlag.PumpState = true;
 	}
 	else
 	{
 		digitalWrite(PUMP, LOW);
-		SystemFlag.ManualPumpState = PUMP_OFF;
+		SystemFlag.PumpState = false;
 	}
 }

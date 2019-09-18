@@ -2,6 +2,8 @@
 #define TIME_H
 #include <Arduino.h>
 
+#define FAST_TIME
+
 #define TIMESTAMP_TO_SEC(TimeStamp)		((TimeStamp) % 60)
 #define TIMESTAMP_TO_MIN(TimeStamp)     (((TimeStamp) / 60) % 60)
 #define TIMESTAMP_TO_HOUR(TimeStamp)    (((TimeStamp) / 3600) % 24)
@@ -75,14 +77,14 @@ extern uint32_t SecondCounter;
 extern uint16_t SecondForDimming;
 extern DAY_TIME_HOURS DayTimeHours;
 extern CALENDAR_VAR TimeDate;
+extern CALENDAR_VAR TimeInLive;
 extern const uint8_t DayForMonth[];
 extern uint16_t LogToSDPeriod;
-extern bool SecondTick;
 extern bool DoDimming;
 
 void RtcInit(void);
 void RefreshCalendar(CALENDAR_VAR *TimeToRefresh);
-void CheckTime(void);
+void TaskTime(void);
 void LogDayTime(void);
 void LogDimming(void);
 void LogSecondCounter(void);
@@ -90,4 +92,5 @@ void SaveTimeDate(void);
 void SetTimeDate(uint8_t Hour, uint8_t Minute, uint8_t Day, uint8_t Month, uint16_t Year);
 void SecondToCalendar(CALENDAR_VAR *ToCalendar, uint32_t Second);
 void LoadTimeDate(CALENDAR_VAR *TimeDateToLoad);
+bool TakeSecondDelayTime(uint32_t *Cnt, uint16_t DelaySec);
 #endif
